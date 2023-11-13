@@ -401,37 +401,6 @@ short imprimirFilme(FILE *movies, int rnn) {
     return 1;
 }
 
-FILE *compactar(FILE *movies, IndiceP **indexP) {
-    fseek(movies, 0, SEEK_SET);
-
-    FILE *aux = fopen("data/aux.dat", "w+");
-    string entrada = malloc(TAM_FILME + 1);
-
-    while (fscanf(movies, "%"STRINGIFY(TAM_FILME)"[^\n]s", entrada) != EOF) {
-        if (entrada[0] != '*' && entrada[1] != '|')
-            fprintf(aux, "%s", entrada);
-    }
-    free(entrada);
-
-    //fechamos os arquivos
-    fclose(movies);
-    fclose(aux);
-
-    //removemos o arquivo de dados antigo, e renomeamos o arquivo auxiliar para ser o novo arquivo de dados
-    remove("data/movies.dat");
-    rename("data/aux.dat", "data/movies.dat");
-
-    //abrimos o novo arquivo de dados
-    movies = fopen("data/movies.dat", "r+a");
-
-    //como os RNN mudaram, apagamos o índice primário da memória, e o refazemos a partir do novo arquivo de dados
-    freeIndiceP(*indexP);
-    *indexP = refazerP(movies);
-
-    puts(SUCCESS "\tArquivo de dados compactado com sucesso" CLEAR"\n");
-    return movies;
-}
-
 string tituloFromRNN(FILE *movies, int rnn) {
     string titulo = malloc(TAM_TIT_PT + 1);
 

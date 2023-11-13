@@ -4,9 +4,7 @@
 #include "operacoesUsuario.h"
 #include "style.h"
 
-// sem compactação!
 // verificação de consistência apenas no índice secundário
-
 
 int main() {
     FILE *movies;           //arquivo de dados
@@ -90,7 +88,7 @@ int main() {
         puts(MENU "2." CLEAR " Remover filme");
         puts(MENU "3." CLEAR " Modificar nota");
         puts(MENU "4." CLEAR " Buscar filme");
-        puts(MENU "5." CLEAR " Listar filmes\t" MENU "6. " CLEAR "Compactar base de dados");
+        puts(MENU "5." CLEAR " Listar filmes");
         puts(MENU "0." CLEAR " Encerrar programa");
         printf(PROMPT "-> " CLEAR INPUT);
         scanf("%hd", &op);
@@ -111,9 +109,6 @@ int main() {
                 break;
             case 5:
                 listarFilmes(movies);
-                break;
-            case 6:
-                compactar(movies, &primarioMem);
                 break;
             case 0:
                 puts(SUCCESS "Encerrando programa..." CLEAR);

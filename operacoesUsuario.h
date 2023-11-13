@@ -32,9 +32,6 @@ int buscarTitulo(FILE *movies, IndiceP *indexP, IndiceS *indexS);
 //Listagem de todos os filmes
 void listarFilmes(FILE *movies);
 
-//Elimina do arquivo os filmes marcados como deletados
-FILE *compactar(FILE *movies, IndiceP **indexP);
-
 //Retorna o código de um filme com determinado código
 string tituloFromRNN(FILE *movies, int rnn);
 

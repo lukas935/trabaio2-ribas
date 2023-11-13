@@ -19,18 +19,22 @@ typedef char *string;
 
 //Definições de estruturas ---------------------------------------------------------------------------------------------
 
-//Nó que representa uma entrada no índice primário (implementado com ponteiros para permitir a determinação dinâmica da ordem da árvore)
+//Nó que representa uma folha na árvore B+ do índice primário (implementado com ponteiros para permitir a determinação dinâmica da ordem da árvore)
 typedef struct noP {
     int rnn;
     bool serFolha;
-    string *chaves; //lista dos valores das chaves no nó
-    int *rnnDados;  //lista dos RNNs dos dados, (se o nó é folha)
-    int *filhos;    //lista de RNNs dos nós filhos (se o nó não é folha)
+    //lista dos valores das chaves no nó
+    string *chaves;
+    //lista dos RNNs dos dados, (se o nó é folha)
+    int *rnnDados;
+    //lista de RNNs dos nós filhos (se o nó não é folha)
+    int *filhos;
     int numChaves;
-    int pai;    //RNN do nó pai
-    int prox;   //RNN do próximo nó na lista (se o nó é folha)
+    //RNN do nó pai
+    int pai;
+    //RNN do próximo nó na lista (se o nó é folha)
+    int prox;
 } NoP;
-
 
 //Nó que representa um código de filme em uma lista de códigos
 typedef struct noCodigo {
@@ -50,9 +54,6 @@ typedef struct noS {
     struct noS *prox;
 } NoS;
 
-//Representação na memória do índice primário
-// não existe, já que armazenamos apenas um nó por vez da Árvore B+ na memória
-
 //Representação na memória do índice secundário
 typedef struct {
     //Ponteiro para o começo de uma lista de NoS, representando as entradas do índice secundário
@@ -65,7 +66,7 @@ typedef struct {
 //Cria um novo NoP, que contém um código e o endereço correspondente, e aponta para NULL
 NoP *newNoP(string codigo, int rnn);
 
-/* TODO: insereNoP -> insereCodigo
+/* TODO: insereCodigo
  * TODO: buscaNoP -> buscaCodigo
  * TODO: removeNoP -> removeCodigo
  * TODO: lerP tem que retornar um NoP com base em um RNN
@@ -77,23 +78,26 @@ NoP *newNoP(string codigo, int rnn);
  * TODO: removeFilmeFromIndice
  */
 
-//Insere ordenadamente um NoP na lista do IndiceP
-void insereNoP(IndiceP *index, NoP *no);
+NoP *novaFolha(int rnn);
 
-//Por busca sequencial, retorna o endereço do NoP com chave codigo; NULL se não está presente
-NoP *buscaNoP(IndiceP *index, string codigo);
+NoP *lerFolha(FILE* index, int rnn) {
+    NoP *novo = novaFolha(rnn);
+    string chaves;
 
-//Remove o NoP correspondente ao codigo
-void removeNoP(IndiceP *index, string codigo);
+    fscanf(index, "%d@", &novo->serFolha);
+    fscanf(index, "%s[^,],%s[^,]%s[^,]", novo->chaves[0], novo->chaves[1], novo->chaves[2]);
+    fscanf(index, "%d,%d,%d@", &novo->rnnDados[0], &novo->rnnDados[1], &novo->rnnDados[2]);
+    fscanf(index, "%d,%d,%d,%d@", &novo->filhos[0], &novo->filhos[1], &novo->filhos[2], &novo->filhos[3]);
 
-//Lê um arquivo de índice primário, e monta um IndiceP com as informações
-IndiceP *lerP(FILE *iprimary);
+    sscanf()
 
-//Cria um IndiceP a partir do arquivo de dados
-IndiceP *refazerP(FILE *movies);
 
-//Salva as informações de um IndiceP em um arquivo
-void saveIndiceP(IndiceP *index);
+
+
+
+
+}
+
 
 //Libera o espaço alocado para um IndiceP na memória
 void freeIndiceP(IndiceP *index);
