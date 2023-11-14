@@ -6,11 +6,13 @@
 
 // verificação de consistência apenas no índice secundário
 
+void saveIndiceP(NoP *pP);
+
 int main() {
     FILE *movies;           //arquivo de dados
     FILE *iprimary;         //arquivo de índice primário
     FILE *ititle;           //arquivo de índice secundário (título em português)
-    NoP *primarioMem;       //índice primário na memória (um único nó da Árvore B+)
+    NoP *raiz;              //índice primário na memória (um único nó da Árvore B+)
     IndiceS *secundarioMem; //índice secundário na memória
 
     short int op; //operação sendo executada pelo usuário no menu
@@ -45,16 +47,16 @@ int main() {
     if (iprimary != NULL) {
         char flag = fgetc(iprimary); //reads the very first character, the flag
         if (flag == CONSISTENTE)
-            primarioMem = lerP(iprimary); //carrega na memória a partir do arquivo iprimary.idx
+            raiz = lerP(iprimary); //carrega na memória a partir do arquivo iprimary.idx
         else
-            primarioMem = refazerP(movies); //refaz o índice na memória a partir do arquivo de filmes
+            raiz = refazerP(movies); //refaz o índice na memória a partir do arquivo de filmes
     } else {
         iprimary = fopen("data/iprimary.idx", "w+");
         if (iprimary == NULL) {
             puts(ERROR "\tERRO: Impossível criar arquivo");
             return 1;
         }
-        primarioMem = refazerP(movies); //faz o índice na memória a partir do arquivo de filmes
+        raiz = refazerP(movies); //faz o índice na memória a partir do arquivo de filmes
     }
     fseek(iprimary, 0, SEEK_SET);
     fputc(INCONSISTENTE, iprimary); //assume que o arquivo ficará inconsistente durante a execução do programa
@@ -96,16 +98,16 @@ int main() {
 
         switch (op) {
             case 1:
-                inserirFilme(movies, &primarioMem, &secundarioMem);
+                inserirFilme(movies, &raiz, &secundarioMem);
                 break;
             case 2:
-                removerFilme(movies, &primarioMem, &secundarioMem);
+                removerFilme(movies, &raiz, &secundarioMem);
                 break;
             case 3:
-                modificarNota(movies, primarioMem);
+                modificarNota(movies, raiz);
                 break;
             case 4:
-                buscarFilme(movies, primarioMem, secundarioMem);
+                buscarFilme(movies, raiz, secundarioMem);
                 break;
             case 5:
                 listarFilmes(movies);
@@ -123,11 +125,10 @@ int main() {
 
     //salvar os arquivos
     fclose(movies);
-    saveIndiceP(primarioMem);
     saveIndiceS(secundarioMem);
 
     //liberar a memória alocada
-    freeIndiceP(primarioMem);
+    freeFolha(raiz);
     freeIndiceS(secundarioMem);
 
     return 0;

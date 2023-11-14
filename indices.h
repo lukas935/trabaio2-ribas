@@ -14,6 +14,8 @@
 typedef char *string;
 #endif
 
+#define TAM_FOLHA 43
+
 #define CONSISTENTE '0'
 #define INCONSISTENTE '1'
 
@@ -67,40 +69,19 @@ typedef struct {
 NoP *newNoP(string codigo, int rnn);
 
 /* TODO: insereCodigo
- * TODO: buscaNoP -> buscaCodigo
- * TODO: removeNoP -> removeCodigo
- * TODO: lerP tem que retornar um NoP com base em um RNN
- * TODO: refazerP (provavelmente não vai mais existir, já que não há necessidade de checar consistência)
- * TODO: saveIndiceP -> writeNoP
- * TODO: freeIndiceP (provavelmente não vai mais existir(
- * TODO: rnnFromCodigo
+ * TODO: buscaCodigo
  * TODO: insereFilme
  * TODO: removeFilmeFromIndice
  */
 
 NoP *novaFolha(int rnn);
 
-NoP *lerFolha(FILE* index, int rnn) {
-    NoP *novo = novaFolha(rnn);
-    string chaves;
+NoP *lerFolha(FILE* index, int rnn);
 
-    fscanf(index, "%d@", &novo->serFolha);
-    fscanf(index, "%s[^,],%s[^,]%s[^,]", novo->chaves[0], novo->chaves[1], novo->chaves[2]);
-    fscanf(index, "%d,%d,%d@", &novo->rnnDados[0], &novo->rnnDados[1], &novo->rnnDados[2]);
-    fscanf(index, "%d,%d,%d,%d@", &novo->filhos[0], &novo->filhos[1], &novo->filhos[2], &novo->filhos[3]);
+void escreverFolha(FILE* index, int rnn);
 
-    sscanf()
-
-
-
-
-
-
-}
-
-
-//Libera o espaço alocado para um IndiceP na memória
-void freeIndiceP(IndiceP *index);
+//Libera o espaço alocado para uma folha de árvore B+ na memória
+void freeFolha(NoP *folha);
 
 //Cria um novo NoCodigo, que contém um código, e aponta para NULL;
 NoCodigo *newNoCodigo(string codigo);
@@ -142,7 +123,7 @@ void freeCodigos(NoCodigo *head);
 void freeIndiceS(IndiceS *index);
 
 //Retorna o RNN de uma entrada de filme com um dado código; -1 se o código não está presente no IndiceP
-int rnnFromCodigo(IndiceP *index, string codigo);
+int rnnFromCodigo(NoP *folha, string codigo);
 
 //Insere o filme com o códgio e titulo correspondentes nos índices
 void insereFilme(IndiceP *indexP, IndiceS *indexS, string codigo, string titulo, int rnn);

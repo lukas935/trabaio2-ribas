@@ -1,5 +1,7 @@
 #include "indices.h"
 
+NoP *buscaCodigo(NoP *folha, string codigo);
+
 NoCodigo *newNoCodigo(string codigo) {
     NoCodigo *novo = malloc(sizeof(NoCodigo));
     novo->codigo = malloc(TAM_COD + 1);
@@ -102,8 +104,8 @@ void insereNoS(IndiceS *index, NoS *no) {
 NoS *buscaNoS(IndiceS *index, string titulo) {
     NoS *aux = index->head;
 
-    while (aux){
-        if(strcmp(aux->titulo, titulo) == 0)
+    while (aux) {
+        if (strcmp(aux->titulo, titulo) == 0)
             return aux;
         aux = aux->prox;
     }
@@ -207,15 +209,11 @@ void saveIndiceS(IndiceS *index) {
     fclose(ititle); //fecha o arquivo
 }
 
-void freeIndiceP(IndiceP *index) {
-    NoP *aux;
-    while (index->head) {
-        aux = index->head->prox;
-        free(index->head->codigo);
-        free(index->head);
-        index->head = aux;
-    }
-    free(index);
+void freeFolha(NoP *folha) {
+    free(folha->rnnDados);
+    free(folha->filhos);
+    free(folha->chaves);
+    free(folha);
 }
 
 void freeCodigos(NoCodigo *head) {
@@ -239,23 +237,27 @@ void freeIndiceS(IndiceS *indice) {
     free(indice); // Libera o IndiceS
 }
 
-int rnnFromCodigo(IndiceP *index, string codigo) {
+int rnnFromCodigo(NoP *folha, string codigo) {
     //garante que a busca é case insensitive
     for (int i = 0; i < 3; i++)
         codigo[i] = toupper(codigo[i]);
 
-    NoP *aux = buscaNoP(index, codigo);
-    if(aux == NULL)
+    NoP *aux = buscaCodigo(folha, codigo);
+    if (aux == NULL)
         return -1;
     return aux->rnn;
 }
 
+//TODO: buscaCodigo
+NoP *buscaCodigo(NoP *folha, string codigo) {
+    return NULL;
+}
+
+//TODO: insereFilme
 void insereFilme(IndiceP *indexP, IndiceS *indexS, string codigo, string titulo, int rnn) {
     NoP *noP = newNoP(codigo, rnn); //cria um NoP
     NoS *noS = NULL; //noS do título
     NoCodigo *novoC = newNoCodigo(codigo); //cria um NoCodigo
-
-    insereNoP(indexP, noP); //insere NoP no IndiceP
 
     //verifica se já existe um NoS para o título sendo inserido
     noS = buscaNoS(indexS, titulo);
@@ -311,8 +313,8 @@ void removeNoS(IndiceS *index, string titulo) {
     }
 }
 
+//TODO: removeFilmeFromIndice
 void removeFilmeFromIndice(IndiceP *indexP, IndiceS *indexS, string codigo, string titulo) {
-    removeNoP(indexP, codigo); //remove o código do índice primário
     NoS *noS = buscaNoS(indexS, titulo); //encontra o título no índice secundário
     removeNoCodigo(noS, codigo); //remove a associação do código com o título no índice secundário
 
@@ -332,4 +334,36 @@ NoP *novaFolha(int rnn) {
     novo->pai = -1;
     novo->prox = -1;
     return novo;
+}
+
+NoP *lerFolha(FILE *index, int rnn) {
+    NoP *novo = novaFolha(rnn);
+    string entrada;
+
+    fscanf(index, "%*d@");
+    fseek(index, rnn * TAM_FOLHA, SEEK_CUR);
+
+    fgets(entrada, TAM_FOLHA, index);
+
+    sscanf(entrada, "%d@%[^,],%[^,],%[^,]@%d,%d,%d@%d,%d,%d,%d@%d@%d@%d@", &novo->serFolha, novo->chaves[0],
+           novo->chaves[1], novo->chaves[2], &novo->rnnDados[0], &novo->rnnDados[1], &novo->rnnDados[2],
+           &novo->filhos[0], &novo->filhos[1], &novo->filhos[2], &novo->filhos[3], &novo->numChaves, &novo->pai,
+           &novo->prox);
+    return novo;
+}
+
+void escreverFolha(FILE *index, int rnn) {
+    NoP *novo = novaFolha(rnn);
+    string entrada = malloc(TAM_FOLHA);
+
+    fscanf(index, "%*d@");
+    fseek(index, rnn * TAM_FOLHA, SEEK_CUR);
+
+    sprintf(entrada, "%d@%s,%s,%s@%d,%d,%d@%d,%d,%d,%d@%d@%d@%d@", novo->serFolha, novo->chaves[0], novo->chaves[1],
+            novo->chaves[2], novo->rnnDados[0], novo->rnnDados[1], novo->rnnDados[2], novo->filhos[0], novo->filhos[1],
+            novo->filhos[2], novo->filhos[3], novo->numChaves, novo->pai, novo->prox);
+
+    //TODO: verificar se entrada está completamente preenchida; se não, preencher com padding
+
+    //TODO: imprimir "entrada" no arquivo
 }
