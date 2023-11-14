@@ -4,10 +4,6 @@
 #include "operacoesUsuario.h"
 #include "style.h"
 
-// verificação de consistência apenas no índice secundário
-
-void saveIndiceP(NoP *pP);
-
 int main() {
     FILE *movies;           //arquivo de dados
     FILE *iprimary;         //arquivo de índice primário

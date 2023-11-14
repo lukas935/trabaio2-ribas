@@ -78,7 +78,7 @@ NoP *novaFolha(int rnn);
 
 NoP *lerFolha(FILE* index, int rnn);
 
-void escreverFolha(FILE* index, int rnn);
+void escreverFolha(FILE* index, NoP* folha);
 
 //Libera o espaço alocado para uma folha de árvore B+ na memória
 void freeFolha(NoP *folha);

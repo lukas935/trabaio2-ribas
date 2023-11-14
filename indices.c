@@ -352,18 +352,25 @@ NoP *lerFolha(FILE *index, int rnn) {
     return novo;
 }
 
-void escreverFolha(FILE *index, int rnn) {
-    NoP *novo = novaFolha(rnn);
+void escreverFolha(FILE *index, NoP *folha) {
     string entrada = malloc(TAM_FOLHA);
 
+    sprintf(entrada, "%d@%s,%s,%s@%d,%d,%d@%d,%d,%d,%d@%d@%d@%d@", folha->serFolha, folha->chaves[0], folha->chaves[1],
+            folha->chaves[2], folha->rnnDados[0], folha->rnnDados[1], folha->rnnDados[2], folha->filhos[0],
+            folha->filhos[1],
+            folha->filhos[2], folha->filhos[3], folha->numChaves, folha->pai, folha->prox);
+
+    int size = strlen(entrada);
+    if (size < TAM_FOLHA + 1) {
+        for (int i = size; i < TAM_FOLHA; i++)
+            entrada[i] = '#';
+        entrada[TAM_FOLHA] = '\0';
+    }
+
+    int rnn = 0; //TODO: determinar o RNN
     fscanf(index, "%*d@");
     fseek(index, rnn * TAM_FOLHA, SEEK_CUR);
 
-    sprintf(entrada, "%d@%s,%s,%s@%d,%d,%d@%d,%d,%d,%d@%d@%d@%d@", novo->serFolha, novo->chaves[0], novo->chaves[1],
-            novo->chaves[2], novo->rnnDados[0], novo->rnnDados[1], novo->rnnDados[2], novo->filhos[0], novo->filhos[1],
-            novo->filhos[2], novo->filhos[3], novo->numChaves, novo->pai, novo->prox);
-
-    //TODO: verificar se entrada está completamente preenchida; se não, preencher com padding
-
+    fprintf(index, "%s", entrada);
     //TODO: imprimir "entrada" no arquivo
 }
