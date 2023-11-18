@@ -1,7 +1,5 @@
 #include "indices.h"
 
-NoP *buscaCodigo(NoP *folha, string codigo);
-
 NoCodigo *newNoCodigo(string codigo) {
     NoCodigo *novo = malloc(sizeof(NoCodigo));
     novo->codigo = malloc(TAM_COD + 1);
@@ -327,50 +325,182 @@ NoP *novaFolha(int rnn) {
     NoP *novo = malloc(sizeof(NoP));
     novo->rnn = rnn;
     novo->serFolha = false;
-    novo->chaves = malloc(3 * sizeof(int));
-    novo->rnnDados = malloc(3 * sizeof(int));
-    novo->filhos = malloc(3 * sizeof(int));
+    novo->chaves = malloc(ORDER * sizeof(string));
+    for (int i = 0; i < ORDER; i++)
+        novo->chaves[i] = malloc(6);
+    novo->rnnDados = malloc(ORDER * sizeof(int));
+    novo->filhos = malloc(ORDER * sizeof(int));
     novo->numChaves = 0;
     novo->pai = -1;
     novo->prox = -1;
     return novo;
 }
 
-NoP *lerFolha(FILE *index, int rnn) {
-    NoP *novo = novaFolha(rnn);
-    string entrada;
+NoP *lerPagina(FILE *index, int rnn) {
+    int i;
+    string aux = malloc(6);
+    NoP *novo = novaFolha(rnn); //aloca espaço para o NoP sendo lido
+    string entrada = malloc(TAM_PAGINA + 1); //aloca espaço para ler a entrada no arquivo
 
-    fscanf(index, "%*d@");
-    fseek(index, rnn * TAM_FOLHA, SEEK_CUR);
+    fseek(index, 3, SEEK_SET); //pulamos o header no arquivo
+    fseek(index, rnn * TAM_PAGINA, SEEK_CUR); //encontramos a posição da entrada que queremos
 
-    fgets(entrada, TAM_FOLHA, index);
+    fgets(entrada, TAM_PAGINA, index); //lemos a entrada de tamanho fixo
 
-    sscanf(entrada, "%d@%[^,],%[^,],%[^,]@%d,%d,%d@%d,%d,%d,%d@%d@%d@%d@", &novo->serFolha, novo->chaves[0],
-           novo->chaves[1], novo->chaves[2], &novo->rnnDados[0], &novo->rnnDados[1], &novo->rnnDados[2],
-           &novo->filhos[0], &novo->filhos[1], &novo->filhos[2], &novo->filhos[3], &novo->numChaves, &novo->pai,
-           &novo->prox);
+    //quebrando a entrada por campos
+    string serFolha = strtok(entrada, "@");
+    string chaves = strtok(NULL, "@");
+    string rnnDados = strtok(NULL, "@");
+    string filhos = strtok(NULL, "@");
+    string numChaves = strtok(NULL, "@");
+    string pai = strtok(NULL, "@");
+    string prox = strtok(NULL, "@");
+
+    // é ou não folha
+    novo->serFolha = atoi(serFolha);
+
+    // verificamos as chaves
+    i = 0;
+    strcpy(novo->chaves[i], strtok(chaves, ","));
+    for (i = 1; i < ORDER; i++)
+        strcpy(novo->chaves[i], strtok(NULL, ","));
+
+    // se é folha,
+    if (novo->serFolha) {
+        // verificamos os RNNs dos dados
+        strcpy(aux, strtok(rnnDados, ","));
+        for (i = 0; i < ORDER; i++) {
+            if (strcmp(aux, "**") == 0)
+                novo->rnnDados[i] = -1;
+            else
+                novo->rnnDados[i] = atoi(aux);
+            strcpy(aux, strtok(NULL, ","));
+        }
+
+        // e assumimos que não há filhos
+        for (i = 0; i < ORDER; i++)
+            novo->filhos[i] = -1;
+
+    } else { //se não é folha,
+        //assumimos que não há RNN de dados
+        for (i = 0; i < ORDER; i++)
+            novo->rnnDados[i] = -1;
+
+        // e verificamos os filhos
+        strcpy(aux, strtok(filhos, ","));
+        for (i = 0; i < ORDER + 1; i++) {
+            if (strcmp(aux, "**") == 0)
+                novo->filhos[i] = -1;
+            else
+                novo->filhos[i] = atoi(aux);
+            strcpy(aux, strtok(NULL, ","));
+        }
+    }
+
+    // número de chaves
+    novo->numChaves = atoi(numChaves);
+
+    // página pai
+    if (strcmp(pai, "**") == 0)
+        novo->pai = -1;
+    else
+        novo->pai = atoi(pai);
+
+    // próxima página
+    if (strcmp(prox, "**") == 0)
+        novo->prox = -1;
+    else
+        novo->prox = atoi(prox);
+
     return novo;
 }
 
-void escreverFolha(FILE *index, NoP *folha) {
-    string entrada = malloc(TAM_FOLHA);
+void escreverPagina(FILE *index, NoP *pagina) {
+    int i;
+    string aux = malloc(6);
+    string entrada = malloc(TAM_PAGINA);
 
-    sprintf(entrada, "%d@%s,%s,%s@%d,%d,%d@%d,%d,%d,%d@%d@%d@%d@", folha->serFolha, folha->chaves[0], folha->chaves[1],
-            folha->chaves[2], folha->rnnDados[0], folha->rnnDados[1], folha->rnnDados[2], folha->filhos[0],
-            folha->filhos[1],
-            folha->filhos[2], folha->filhos[3], folha->numChaves, folha->pai, folha->prox);
+    string chaves = malloc((6 + 1) * ORDER);
+    string rnnDados = malloc((2 + 1) * ORDER);
+    string filhos = malloc((2 + 1) * (ORDER + 1));
+    string numChaves = malloc(1);
+    string pai = malloc(2);
+    string prox = malloc(2);
 
-    int size = strlen(entrada);
-    if (size < TAM_FOLHA + 1) {
-        for (int i = size; i < TAM_FOLHA; i++)
-            entrada[i] = '#';
-        entrada[TAM_FOLHA] = '\0';
+    // escrevemos as chaves
+    for (i = 0; i < ORDER; i++) {
+        if (strcmp(pagina->chaves[i], "******") == 0)
+            strcat(chaves, "******");
+        else
+            strcat(chaves, pagina->chaves[i]);
+        strcat(chaves, ",");
     }
 
-    int rnn = 0; //TODO: determinar o RNN
-    fscanf(index, "%*d@");
-    fseek(index, rnn * TAM_FOLHA, SEEK_CUR);
+    //se a página é interna,
+    if (!pagina->serFolha) {
 
+        //RNNs dos dados são nulos
+        for (i = 0; i < ORDER; i++)
+            strcat(rnnDados, "**,");
+
+        //determinamos a formatação correta para guardar os filhos
+        for (i = 0; i < ORDER + 1; i++) {
+            int rnn = pagina->filhos[i];
+            string stringRnn = malloc(2);
+
+            if (rnn < 10)
+                sprintf(stringRnn, "%c%d", '0', rnn);
+            else
+                sprintf(stringRnn, "%d", rnn);
+
+            strcat(filhos, stringRnn);
+            strcat(filhos, ",");
+            free(stringRnn);
+        }
+    } else { //se a página é folha,
+
+        //determinamos a formatação correta para guardar or RNNs
+        for (i = 0; i < ORDER; i++) {
+            int rnn = pagina->rnnDados[i];
+            string stringRnn = malloc(2);
+
+            if (rnn < 10)
+                sprintf(stringRnn, "%c%d", '0', rnn);
+            else
+                sprintf(stringRnn, "%d", rnn);
+            strcat(rnnDados, stringRnn);
+            strcat(rnnDados, ",");
+            free(stringRnn);
+        }
+
+        //nó folha não tem filhos
+        for (i = 0; i < ORDER + 1; i++)
+            strcat(filhos, "**,");
+    }
+
+    itoa((int) pagina->serFolha, aux, 10);
+    strcat(entrada, aux);
+    strcat(entrada, "@");
+    strcat(entrada, chaves);
+    strcat(entrada, "@");
+    strcat(entrada, rnnDados);
+    strcat(entrada, "@");
+    strcat(entrada, filhos);
+    strcat(entrada, "@");
+
+
+    //TODO: numChaves, pai, prox
+
+
+    //sprintf(entrada,"%d@%s,%s,%s@%d,%d,%d@%d,%d,%d,%d@%d@%d@%d@", pagina->serFolha, pagina->chaves[0], pagina->chaves[1],pagina->chaves[2], pagina->rnnDados[0], pagina->rnnDados[1], pagina->rnnDados[2], pagina->filhos[0],pagina->filhos[1],pagina->filhos[2], pagina->filhos[3], pagina->numChaves, pagina->pai, pagina->prox);
+
+    int rnn = pagina->rnn;
+    if (rnn == -1) {
+        //rnn = calculaRnnFinal(index);
+        fseek(index, 0, SEEK_END);
+    } else {
+        fseek(index, 3, SEEK_SET);
+        fseek(index, rnn * TAM_PAGINA, SEEK_CUR);
+    }
     fprintf(index, "%s", entrada);
-    //TODO: imprimir "entrada" no arquivo
 }

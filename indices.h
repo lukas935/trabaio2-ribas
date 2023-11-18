@@ -14,7 +14,8 @@
 typedef char *string;
 #endif
 
-#define TAM_FOLHA 43
+#define ORDER 5
+#define TAM_PAGINA 79
 
 #define CONSISTENTE '0'
 #define INCONSISTENTE '1'
@@ -74,11 +75,14 @@ NoP *newNoP(string codigo, int rnn);
  * TODO: removeFilmeFromIndice
  */
 
+//Aloca espaço na memória para um NoP (folha da árvore B+) com campo rnn
 NoP *novaFolha(int rnn);
 
-NoP *lerFolha(FILE* index, int rnn);
+//Lê a folha na posição rnn no arquivo index, e retorna um NoP
+NoP *lerPagina(FILE* index, int rnn);
 
-void escreverFolha(FILE* index, NoP* folha);
+//Escreve um NoP folha no arquivo index
+void escreverPagina(FILE* index, NoP* pagina);
 
 //Libera o espaço alocado para uma folha de árvore B+ na memória
 void freeFolha(NoP *folha);
@@ -130,5 +134,10 @@ void insereFilme(IndiceP *indexP, IndiceS *indexS, string codigo, string titulo,
 
 //Remove o filme com o código e titulo correspondente dos índices
 void removeFilmeFromIndice(IndiceP *indexP, IndiceS *indexS, string codigo, string titulo);
+
+int calculaRnnFinal(FILE *index){
+    fseek(index, 0, SEEK_END);
+    return (ftell(index) - 3) / TAM_PAGINA;
+}
 
 #endif
