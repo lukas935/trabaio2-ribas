@@ -6,3 +6,5 @@ set(SOURCE_FILES main.c indices.c operacoesUsuario.c)
 set(HEADER_FILES style.h filmes.h indices.h operacoesUsuario.h)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+
+add_executable(TESTE teste.c indices.c)

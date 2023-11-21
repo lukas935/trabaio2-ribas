@@ -15,7 +15,7 @@ typedef char *string;
 #endif
 
 #define ORDER 5
-#define TAM_PAGINA 79
+#define TAM_PAGINA 80
 
 #define CONSISTENTE '0'
 #define INCONSISTENTE '1'
@@ -81,12 +81,6 @@ NoP *novaFolha(int rnn);
 //Lê a folha na posição rnn no arquivo index, e retorna um NoP
 NoP *lerPagina(FILE* index, int rnn);
 
-//Escreve um NoP folha no arquivo index
-void escreverPagina(FILE* index, NoP* pagina);
-
-//Libera o espaço alocado para uma folha de árvore B+ na memória
-void freeFolha(NoP *folha);
-
 //Cria um novo NoCodigo, que contém um código, e aponta para NULL;
 NoCodigo *newNoCodigo(string codigo);
 
@@ -120,6 +114,12 @@ IndiceS *refazerS(FILE *movies);
 //Salva as informações de IndiceS em um arquivo
 void saveIndiceS(IndiceS *index);
 
+//Escreve um NoP folha no arquivo index
+void escreverPagina(FILE* index, NoP* pagina);
+
+//Libera o espaço alocado para uma folha de árvore B+ na memória
+void freePagina(NoP *pagina);
+
 //Libera a lista de códigos dentro de um NoS
 void freeCodigos(NoCodigo *head);
 
@@ -129,15 +129,14 @@ void freeIndiceS(IndiceS *index);
 //Retorna o RNN de uma entrada de filme com um dado código; -1 se o código não está presente no IndiceP
 int rnnFromCodigo(NoP *folha, string codigo);
 
+NoP *buscaCodigo(NoP *folha, string codigo);
+
 //Insere o filme com o códgio e titulo correspondentes nos índices
-void insereFilme(IndiceP *indexP, IndiceS *indexS, string codigo, string titulo, int rnn);
+void insereFilme(NoP *indexP, IndiceS *indexS, string codigo, string titulo, int rnn);
 
 //Remove o filme com o código e titulo correspondente dos índices
-void removeFilmeFromIndice(IndiceP *indexP, IndiceS *indexS, string codigo, string titulo);
+void removeFilmeFromIndice(NoP *indexP, IndiceS *indexS, string codigo, string titulo);
 
-int calculaRnnFinal(FILE *index){
-    fseek(index, 0, SEEK_END);
-    return (ftell(index) - 3) / TAM_PAGINA;
-}
+int calculaRnnFinal(FILE *index);
 
 #endif

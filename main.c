@@ -124,7 +124,7 @@ int main() {
     saveIndiceS(secundarioMem);
 
     //liberar a memória alocada
-    freeFolha(raiz);
+    freePagina(raiz);
     freeIndiceS(secundarioMem);
 
     return 0;
