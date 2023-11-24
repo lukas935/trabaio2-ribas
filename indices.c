@@ -1,14 +1,14 @@
 #include "indices.h"
 
-NoP *novaFolha(int rnn) {
+NoP *novaPagina(int rnn) {
     NoP *novo = malloc(sizeof(NoP));
     novo->rnn = rnn;
     novo->serFolha = false;
-    novo->chaves = malloc(ORDER * sizeof(string));
-    for (int i = 0; i < ORDER; i++)
-        novo->chaves[i] = malloc(6);
-    novo->rnnDados = malloc(ORDER * sizeof(int));
-    novo->filhos = malloc(ORDER * sizeof(int));
+    novo->chaves = malloc((ORDER - 1) * sizeof(string));
+    for (int i = 0; i < ORDER - 1; i++)
+        novo->chaves[i] = malloc(6 + 1);
+    novo->rnnDados = (int *) malloc(ORDER * sizeof(int));
+    novo->filhos = (int *) malloc(ORDER * sizeof(int));
     novo->numChaves = 0;
     novo->pai = -1;
     novo->prox = -1;
@@ -16,14 +16,17 @@ NoP *novaFolha(int rnn) {
 }
 
 NoP *lerPagina(FILE *index, int rnn) {
+    //se o arquivo não foi aberto, ou o rnn passado é inválido (negativo, ou após o fim do arquivo)
+    if (index == NULL || rnn < 0 || rnn > calculaRnnFinal(index))
+        return NULL;
+
     int i;
-    NoP *novo = novaFolha(rnn); //aloca espaço para o NoP sendo lido
+    NoP *novo = novaPagina(rnn); //aloca espaço para o NoP sendo lido
     string entrada = malloc(TAM_PAGINA + 1); //aloca espaço para ler a entrada no arquivo
 
-    fseek(index, 3, SEEK_SET); //pulamos o header no arquivo
-    fseek(index, rnn * TAM_PAGINA, SEEK_CUR); //encontramos a posição da entrada que queremos
+    fseek(index, 3 + (rnn * TAM_PAGINA), SEEK_SET); //encontramos a posição da entrada que queremos, pulando o header
 
-    fgets(entrada, TAM_PAGINA, index); //lemos a entrada de tamanho fixo
+    fgets(entrada, TAM_PAGINA + 1, index); //lemos a entrada de tamanho fixo
 
     //quebrando a entrada por campos
     string serFolha = strdup(strtok(entrada, "@"));
@@ -41,7 +44,7 @@ NoP *lerPagina(FILE *index, int rnn) {
     free(serFolha);
 
     // verificamos as chaves
-    for (i = 0; i < ORDER; i++) {
+    for (i = 0; i < ORDER - 1; i++) {
         char *token = strtok((i == 0) ? chaves : NULL, ",");
         novo->chaves[i] = strdup(token);
     }
@@ -207,13 +210,11 @@ void insereNoS(IndiceS *index, NoS *no) {
 
 NoS *buscaNoS(IndiceS *index, string titulo) {
     NoS *aux = index->head;
-
     while (aux) {
         if (strcmp(aux->titulo, titulo) == 0)
             return aux;
         aux = aux->prox;
     }
-
     return NULL;
 }
 
@@ -284,7 +285,6 @@ IndiceS *refazerS(FILE *movies) {
     return novo;
 }
 
-
 void saveIndiceS(IndiceS *index) {
     FILE *ititle = fopen("data/ititle.idx", "w"); //abre o arquivo para ser reescrito
 
@@ -315,15 +315,18 @@ void saveIndiceS(IndiceS *index) {
 }
 
 void escreverPagina(FILE *index, NoP *pagina) {
+    if (index == NULL || pagina == NULL)
+        return;
+
     int i, rnn;
     string aux;
     string entrada = malloc(TAM_PAGINA + 1);
 
     //declaração de buffers para cada campo da entrada (tamanho do campo + separador "," se aplicável + \0)
     string serFolha = calloc(1 + 1, sizeof(char));
-    string chaves = calloc(((6 + 1) * ORDER) + 1, sizeof(char));
+    string chaves = calloc(((6 + 1) * (ORDER - 1)) + 1, sizeof(char));
     string rnnDados = calloc(((2 + 1) * ORDER) + 1, sizeof(char));
-    string filhos = calloc(((2 + 1) * (ORDER + 1)) + 1, sizeof(char));
+    string filhos = calloc(((2 + 1) * ORDER) + 1, sizeof(char));
     string numChaves = calloc(1 + 1, sizeof(char));
     string pai = calloc(2 + 1, sizeof(char));
     string prox = calloc(2 + 1, sizeof(char));
@@ -332,7 +335,7 @@ void escreverPagina(FILE *index, NoP *pagina) {
     sprintf(serFolha, "%d", (int) pagina->serFolha);
 
     //formatamos as chaves
-    for (i = 0; i < ORDER; i++) {
+    for (i = 0; i < ORDER - 1; i++) {
         strcat(chaves, pagina->chaves[i]);
         strcat(chaves, ",");
     }
@@ -346,7 +349,7 @@ void escreverPagina(FILE *index, NoP *pagina) {
 
         //formatamos os filhos
         aux = malloc(3 + 1);
-        for (i = 0; i < ORDER + 1; i++) {
+        for (i = 0; i < ORDER; i++) {
             rnn = pagina->filhos[i];
             if (rnn == -1)
                 strcpy(aux, "**,");
@@ -371,7 +374,7 @@ void escreverPagina(FILE *index, NoP *pagina) {
         free(aux);
 
         //nó folha não tem filhos
-        for (i = 0; i < ORDER + 1; i++)
+        for (i = 0; i < ORDER; i++)
             strcat(filhos, "**,");
     }
 
@@ -390,7 +393,7 @@ void escreverPagina(FILE *index, NoP *pagina) {
     else
         sprintf(prox, "%02d", pagina->prox);
 
-    //utilizamos os campos formatados e sepradadores para compor a entrada
+    //utilizamos os campos formatados e separadores para compor a entrada
     sprintf(entrada, "%s@%s@%s@%s@%s@%s@%s@", serFolha, chaves, rnnDados, filhos, numChaves, pai, prox);
 
     //liberamos a memória alocada
@@ -418,7 +421,7 @@ void escreverPagina(FILE *index, NoP *pagina) {
 
 void freePagina(NoP *pagina) {
     if (pagina != NULL) {
-        for (int i = 0; i < ORDER; i++)
+        for (int i = 0; i < ORDER - 1; i++)
             free(pagina->chaves[i]);
         free(pagina->chaves);
         free(pagina->rnnDados);
@@ -448,20 +451,39 @@ void freeIndiceS(IndiceS *indice) {
     free(indice); // Libera o IndiceS
 }
 
-int rnnFromCodigo(NoP *folha, string codigo) {
-    //garante que a busca é case insensitive
-    for (int i = 0; i < 3; i++)
-        codigo[i] = toupper(codigo[i]);
+//TODO: algo errado com o free
+bool buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, int *retorno_i) {
+    int i;
+    NoP *pagina = lerPagina(index, rnn_folha);
 
-    NoP *aux = buscaCodigo(folha, codigo);
-    if (aux == NULL)
-        return -1;
-    return aux->rnn;
-}
+    if (pagina == NULL)
+        return false;
 
-//TODO: buscaCodigo
-NoP *buscaCodigo(NoP *folha, string codigo) {
-    return NULL;
+    //buscamos até que codigo seja menor do que a chave no índice, ou chegamos ao fim da lista
+    i = 0;
+    while (i < pagina->numChaves && strcmp(codigo, pagina->chaves[i]) >= 0) {
+        //se encontramos codigo, atribuímos suas coordenadas às variáveis de retorno
+        if (pagina->serFolha && strcmp(codigo, pagina->chaves[i]) == 0) {
+            *retorno_rnn = pagina->rnn;
+            *retorno_i = i;
+            freePagina(pagina);
+            return true;
+        }
+        i++;
+    }
+
+    //se não encontramos e estamos numa página interna, procuramos no filho correspondende
+    if (!pagina->serFolha) {
+        rnn_folha = pagina->filhos[i];
+        freePagina(pagina);
+        return buscaCodigo(index, rnn_folha, codigo, retorno_rnn, retorno_i);
+    }
+
+    //se não, atribuímos valores de NOT FOUND
+    *retorno_rnn = -1;
+    *retorno_i = -1;
+    freePagina(pagina);
+    return false;
 }
 
 //TODO: insereFilme
@@ -536,5 +558,5 @@ void removeFilmeFromIndice(NoP *indexP, IndiceS *indexS, string codigo, string t
 
 int calculaRnnFinal(FILE *index) {
     fseek(index, 0, SEEK_END);
-    return (ftell(index) - 3) / TAM_PAGINA;
+    return (((int) ftell(index) - 3)) / TAM_PAGINA;
 }

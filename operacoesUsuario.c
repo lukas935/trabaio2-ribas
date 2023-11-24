@@ -124,6 +124,7 @@ void inserirFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
     free(sobrenome);
 
     //verifica se o código desse filme já está registrado
+    //TODO: refazer isso
     rnn = rnnFromCodigo(*indexP, codigo);
     if (rnn != -1) {
         puts(ERROR "\tERRO: filme ja cadastrado" CLEAR "\n");
@@ -181,6 +182,7 @@ void removerFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
     clearBuffer();
 
     //procura a posição do filme correspondente no arquivo
+    //TODO: refazer isso
     rnn = rnnFromCodigo(*indexP, codigo);
     if (rnn == -1) {
         puts(ERROR "\tFilme nao encontrado" CLEAR "\n");
@@ -215,6 +217,7 @@ void modificarNota(FILE *movies, IndiceP *indexP) {
     scanf("%"STRINGIFY(TAM_COD)"s", codigo);
     clearBuffer();
 
+    //TODO: refazer isso
     rnn = rnnFromCodigo(indexP, codigo);
     free(codigo);
     if (rnn == -1) {
@@ -286,6 +289,7 @@ int buscarCodigo(FILE *movies, IndiceP *indexP) {
     scanf("%"STRINGIFY(TAM_COD)"s", codigo);
     clearBuffer();
 
+    //TODO: refazer isso
     rnn = rnnFromCodigo(indexP, codigo);
     free(codigo);
     if (rnn == -1) {
@@ -323,6 +327,7 @@ int buscarTitulo(FILE *movies, IndiceP *indexP, IndiceS *indexS) {
     }
 
     //analisa todos os códigos associados a esse título
+    //TODO: refazer isso
     noC = noS->head;
     while (noC != NULL) {
         rnn = rnnFromCodigo(indexP, noC->codigo);

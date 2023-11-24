@@ -14,8 +14,8 @@
 typedef char *string;
 #endif
 
-#define ORDER 5
-#define TAM_PAGINA 80
+#define ORDER 6
+#define TAM_PAGINA 82
 
 #define CONSISTENTE '0'
 #define INCONSISTENTE '1'
@@ -23,7 +23,7 @@ typedef char *string;
 //Definições de estruturas ---------------------------------------------------------------------------------------------
 
 //Nó que representa uma folha na árvore B+ do índice primário (implementado com ponteiros para permitir a determinação dinâmica da ordem da árvore)
-typedef struct noP {
+typedef struct {
     int rnn;
     bool serFolha;
     //lista dos valores das chaves no nó
@@ -76,7 +76,7 @@ NoP *newNoP(string codigo, int rnn);
  */
 
 //Aloca espaço na memória para um NoP (folha da árvore B+) com campo rnn
-NoP *novaFolha(int rnn);
+NoP *novaPagina(int rnn);
 
 //Lê a folha na posição rnn no arquivo index, e retorna um NoP
 NoP *lerPagina(FILE* index, int rnn);
@@ -126,10 +126,8 @@ void freeCodigos(NoCodigo *head);
 //Libera o espaço alocado para um IndiceS na memória
 void freeIndiceS(IndiceS *index);
 
-//Retorna o RNN de uma entrada de filme com um dado código; -1 se o código não está presente no IndiceP
-int rnnFromCodigo(NoP *folha, string codigo);
-
-NoP *buscaCodigo(NoP *folha, string codigo);
+//Busca um código na árvore B+ do índice primário
+bool buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, int *retorno_i);
 
 //Insere o filme com o códgio e titulo correspondentes nos índices
 void insereFilme(NoP *indexP, IndiceS *indexS, string codigo, string titulo, int rnn);

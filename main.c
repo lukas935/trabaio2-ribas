@@ -8,7 +8,6 @@ int main() {
     FILE *movies;           //arquivo de dados
     FILE *iprimary;         //arquivo de índice primário
     FILE *ititle;           //arquivo de índice secundário (título em português)
-    NoP *raiz;              //índice primário na memória (um único nó da Árvore B+)
     IndiceS *secundarioMem; //índice secundário na memória
 
     short int op; //operação sendo executada pelo usuário no menu
@@ -124,7 +123,6 @@ int main() {
     saveIndiceS(secundarioMem);
 
     //liberar a memória alocada
-    freePagina(raiz);
     freeIndiceS(secundarioMem);
 
     return 0;

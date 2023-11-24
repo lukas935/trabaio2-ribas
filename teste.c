@@ -1,13 +1,20 @@
 #include "indices.h"
 #include <stdio.h>
 
-int main(){
+//TODO: que se explodam os ponteiros
+
+int main() {
     FILE *indice = fopen("teste.idx", "r+");
 
-    NoP *pagina = lerPagina(indice, 0);
-    escreverPagina(indice, pagina);
+    int raiz;
+    fscanf(indice, "%d@", &raiz);
 
-    freePagina(pagina);
+    int rnn, index;
+    string codigo = malloc(6);
+
+    strcpy(codigo, "NOL15");
+    bool found = buscaCodigo(indice, raiz, codigo, &rnn, &index);
+
     fclose(indice);
 
     return 0;
