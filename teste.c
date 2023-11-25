@@ -1,21 +1,15 @@
 #include "indices.h"
 #include <stdio.h>
 
-//TODO: que se explodam os ponteiros
-
 int main() {
-    FILE *indice = fopen("teste.idx", "r+");
+    FILE *index = fopen("teste.idx", "r+");
+    int raiz = getRoot(index);
 
-    int raiz;
-    fscanf(indice, "%d@", &raiz);
+    int rnn, i;
 
-    int rnn, index;
-    string codigo = malloc(6);
+    insereCodigo(index, "NOL23", 14); //TODO: verificar escrita dupla após split
 
-    strcpy(codigo, "NOL15");
-    bool found = buscaCodigo(indice, raiz, codigo, &rnn, &index);
-
-    fclose(indice);
+    fclose(index);
 
     return 0;
 }

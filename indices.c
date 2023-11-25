@@ -4,11 +4,12 @@ NoP *novaPagina(int rnn) {
     NoP *novo = malloc(sizeof(NoP));
     novo->rnn = rnn;
     novo->serFolha = false;
-    novo->chaves = malloc((ORDER - 1) * sizeof(string));
+    for (int i = 0; i < ORDER; i++) //com um espaço a mais, para permitir overflow
+        strcpy(novo->chaves[i], "*****");
     for (int i = 0; i < ORDER - 1; i++)
-        novo->chaves[i] = malloc(6 + 1);
-    novo->rnnDados = (int *) malloc(ORDER * sizeof(int));
-    novo->filhos = (int *) malloc(ORDER * sizeof(int));
+        novo->rnnDados[i] = -1;
+    for (int i = 0; i < ORDER; i++)
+        novo->filhos[i] = -1;
     novo->numChaves = 0;
     novo->pai = -1;
     novo->prox = -1;
@@ -20,91 +21,61 @@ NoP *lerPagina(FILE *index, int rnn) {
     if (index == NULL || rnn < 0 || rnn > calculaRnnFinal(index))
         return NULL;
 
-    int i;
     NoP *novo = novaPagina(rnn); //aloca espaço para o NoP sendo lido
-    string entrada = malloc(TAM_PAGINA + 1); //aloca espaço para ler a entrada no arquivo
+    char entrada[TAM_PAGINA+1]; //buffer para ler a entrada do arquivo
 
     fseek(index, 3 + (rnn * TAM_PAGINA), SEEK_SET); //encontramos a posição da entrada que queremos, pulando o header
-
     fgets(entrada, TAM_PAGINA + 1, index); //lemos a entrada de tamanho fixo
 
     //quebrando a entrada por campos
-    string serFolha = strdup(strtok(entrada, "@"));
-    string chaves = strdup(strtok(NULL, "@"));
-    string rnnDados = strdup(strtok(NULL, "@"));
-    string filhos = strdup(strtok(NULL, "@"));
-    string numChaves = strdup(strtok(NULL, "@"));
-    string pai = strdup(strtok(NULL, "@"));
-    string prox = strdup(strtok(NULL, "@"));
-
-    free(entrada);
+    string serFolha = strtok(entrada, "@");
+    string chaves = strtok(NULL, "@");
+    string rnnDados = strtok(NULL, "@");
+    string filhos = strtok(NULL, "@");
+    string numChaves = strtok(NULL, "@");
+    string pai = strtok(NULL, "@");
+    string prox = strtok(NULL, "@");
 
     // é ou não folha
     novo->serFolha = (strcmp(serFolha, "1") == 0) ? true : false;
-    free(serFolha);
 
     // verificamos as chaves
-    for (i = 0; i < ORDER - 1; i++) {
+    for (int i = 0; i < ORDER - 1; i++) {
         char *token = strtok((i == 0) ? chaves : NULL, ",");
-        novo->chaves[i] = strdup(token);
+        strcpy(novo->chaves[i], token);
     }
-    free(chaves);
 
     // se é folha,
     if (novo->serFolha) {
-
         // verificamos os RNNs dos dados
-        for (i = 0; i < ORDER; i++) {
+        for (int i = 0; i < ORDER - 1; i++) {
             char *token = strtok((i == 0) ? rnnDados : NULL, ",");
-
-            if (token == NULL || strcmp(token, "**") == 0)
-                novo->rnnDados[i] = -1;
-            else
+            if (token != NULL && strcmp(token, "**") != 0)
                 novo->rnnDados[i] = atoi(token);
         }
-        free(rnnDados);
-
-        // e assumimos que não há filhos
-        for (i = 0; i < ORDER; i++)
-            novo->filhos[i] = -1;
-        free(filhos);
+        //e os filhos já foram inicializados como vazios
 
     } else { //se não é folha,
-
-        //assumimos que não há RNN de dados
-        for (i = 0; i < ORDER; i++)
-            novo->rnnDados[i] = -1;
-        free(rnnDados);
+        //os RNNs dos dados já foram inicializados como vazios
 
         // e verificamos os filhos
-        for (i = 0; i < ORDER + 1; i++) {
+        for (int i = 0; i < ORDER; i++) {
             char *token = strtok((i == 0) ? filhos : NULL, ",");
-
-            if (token == NULL || strcmp(token, "**") == 0)
-                novo->filhos[i] = -1;
-            else
+            if (token != NULL && strcmp(token, "**") != 0)
                 novo->filhos[i] = atoi(token);
         }
-        free(filhos);
     }
 
     // número de chaves
     novo->numChaves = atoi(numChaves);
-    free(numChaves);
 
     // página pai
-    if (strcmp(pai, "**") == 0)
-        novo->pai = -1;
-    else
+    if (strcmp(pai, "**") != 0)
         novo->pai = atoi(pai);
-    free(pai);
 
     // próxima página
-    if (strcmp(prox, "**") == 0)
-        novo->prox = -1;
-    else
+    if (strcmp(prox, "**") != 0)
         novo->prox = atoi(prox);
-    free(prox);
 
     return novo;
 }
@@ -228,7 +199,7 @@ IndiceS *lerS(FILE *ititle) {
     string codigo = malloc(TAM_COD + 1);
 
     //enquanto há linhas para ler, armazena as informações
-    fseek(ititle, 1, SEEK_SET);
+    fseek(ititle, 1, SEEK_SET); //pula a flag do cabeçalho
     while (fscanf(ititle, "%[^@]@%[^@]@", titulo, codigos) != EOF) {
         auxS = newNoS(titulo); //cria um novo NoS, com o título lido
 
@@ -237,10 +208,10 @@ IndiceS *lerS(FILE *ititle) {
 
         //enquanto houverem códigos, lemos as informações
         int i = 0;
-        while (sscanf_s(codigos + i, "%5s", codigo, sizeof(codigo)) == 1) {
+        while (sscanf_s(codigos + i, "%"STRINGIFY(TAM_COD)"s", codigo, sizeof(codigo)) == 1) {
             auxC = newNoCodigo(codigo);         //criamos um NoCodigo
             insereNoCodigo(auxS, auxC); //inserimos o NoCodigo no NoS
-            i += 5; // Avança para o próximo conjunto de 5 caracteres
+            i += TAM_COD; // Avança para o próximo conjunto de 5 caracteres
         }
 
         insereNoS(novo, auxS); //inserimos o NoS criado no IndiceS novo
@@ -262,7 +233,7 @@ IndiceS *refazerS(FILE *movies) {
     NoCodigo *currentC = NULL;
 
     //enquanto há entradas para ler, armazena as informações
-    fseek(movies, 0, SEEK_SET);
+    fseek(movies, 1, SEEK_SET); //pula a flag do cabeçalho
     while (fscanf(movies, "%"STRINGIFY(TAM_FILME)"[^\n]s", filme) != EOF) {
         if (filme[0] != '*' && filme[1] != '|') {
             sscanf(filme, "%[^@]@%[^@]@", codigo, titulo);
@@ -319,17 +290,16 @@ void escreverPagina(FILE *index, NoP *pagina) {
         return;
 
     int i, rnn;
-    string aux;
-    string entrada = malloc(TAM_PAGINA + 1);
+    char entrada[TAM_PAGINA + 1];
 
     //declaração de buffers para cada campo da entrada (tamanho do campo + separador "," se aplicável + \0)
-    string serFolha = calloc(1 + 1, sizeof(char));
-    string chaves = calloc(((6 + 1) * (ORDER - 1)) + 1, sizeof(char));
-    string rnnDados = calloc(((2 + 1) * ORDER) + 1, sizeof(char));
-    string filhos = calloc(((2 + 1) * ORDER) + 1, sizeof(char));
-    string numChaves = calloc(1 + 1, sizeof(char));
-    string pai = calloc(2 + 1, sizeof(char));
-    string prox = calloc(2 + 1, sizeof(char));
+    char serFolha[1 + 1] = "";
+    char chaves[((TAM_COD + 1) * (ORDER - 1)) + 1] = "";
+    char rnnDados[((2 + 1) * ORDER - 1) + 1] = "";
+    char filhos[((2 + 1) * ORDER) + 1] = "";
+    char numChaves[1 + 1] = "";
+    char pai[2 + 1] = "";
+    char prox[2 + 1] = "";
 
     //formatamos o booleano de ser ou não folha
     sprintf(serFolha, "%d", (int) pagina->serFolha);
@@ -342,36 +312,28 @@ void escreverPagina(FILE *index, NoP *pagina) {
 
     //se a página é interna,
     if (!pagina->serFolha) {
-
         //RNNs dos dados são nulos
-        for (i = 0; i < ORDER; i++)
+        for (i = 0; i < ORDER - 1; i++)
             strcat(rnnDados, "**,");
 
         //formatamos os filhos
-        aux = malloc(3 + 1);
         for (i = 0; i < ORDER; i++) {
             rnn = pagina->filhos[i];
             if (rnn == -1)
-                strcpy(aux, "**,");
+                strcat(filhos, "**,");
             else
-                sprintf(aux, "%02d,", rnn);
-            strcat(filhos, aux);
+                sprintf(filhos + strlen(filhos), "%02d,", rnn);
         }
-        free(aux);
 
     } else { //se a página é folha,
-
         //formatamos os RNNs dos dados
-        aux = malloc(3 + 1);
-        for (i = 0; i < ORDER; i++) {
+        for (i = 0; i < ORDER - 1; i++) {
             rnn = pagina->rnnDados[i];
             if (rnn == -1)
-                strcpy(aux, "**,");
+                strcat(rnnDados, "**,");
             else
-                sprintf(aux, "%02d,", rnn);
-            strcat(rnnDados, aux);
+                sprintf(rnnDados + strlen(rnnDados), "%02d,", rnn);
         }
-        free(aux);
 
         //nó folha não tem filhos
         for (i = 0; i < ORDER; i++)
@@ -379,7 +341,10 @@ void escreverPagina(FILE *index, NoP *pagina) {
     }
 
     //formatamos a quantidade de chaves
-    sprintf(numChaves, "%d", pagina->numChaves);
+    if (pagina->numChaves == ORDER)
+        sprintf(numChaves, "%d", ORDER - 1);
+    else
+        sprintf(numChaves, "%d", pagina->numChaves);
 
     //formatamos o pai
     if (pagina->pai == -1)
@@ -396,38 +361,14 @@ void escreverPagina(FILE *index, NoP *pagina) {
     //utilizamos os campos formatados e separadores para compor a entrada
     sprintf(entrada, "%s@%s@%s@%s@%s@%s@%s@", serFolha, chaves, rnnDados, filhos, numChaves, pai, prox);
 
-    //liberamos a memória alocada
-    free(serFolha);
-    free(chaves);
-    free(rnnDados);
-    free(filhos);
-    free(numChaves);
-    free(pai);
-    free(prox);
-
-    //encontramos a posição
+    //encontramos a posição correta para escrita
     rnn = pagina->rnn;
     int final = calculaRnnFinal(index);
     if (rnn == -1 || rnn > final)
         fseek(index, 0, SEEK_END);
-    else {
-        fseek(index, 3, SEEK_SET);
-        fseek(index, rnn * TAM_PAGINA, SEEK_CUR);
-    }
+    else
+        fseek(index, 3 + (rnn * TAM_PAGINA), SEEK_SET);
     fprintf(index, "%s", entrada);
-
-    free(entrada);
-}
-
-void freePagina(NoP *pagina) {
-    if (pagina != NULL) {
-        for (int i = 0; i < ORDER - 1; i++)
-            free(pagina->chaves[i]);
-        free(pagina->chaves);
-        free(pagina->rnnDados);
-        free(pagina->filhos);
-        free(pagina);
-    }
 }
 
 void freeCodigos(NoCodigo *head) {
@@ -451,23 +392,20 @@ void freeIndiceS(IndiceS *indice) {
     free(indice); // Libera o IndiceS
 }
 
-//TODO: algo errado com o free
-bool buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, int *retorno_i) {
-    int i;
+NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, int *retorno_i) {
     NoP *pagina = lerPagina(index, rnn_folha);
 
-    if (pagina == NULL)
-        return false;
+    if (pagina == NULL || strlen(codigo) != TAM_COD)
+        return NULL;
 
     //buscamos até que codigo seja menor do que a chave no índice, ou chegamos ao fim da lista
-    i = 0;
+    int i = 0;
     while (i < pagina->numChaves && strcmp(codigo, pagina->chaves[i]) >= 0) {
         //se encontramos codigo, atribuímos suas coordenadas às variáveis de retorno
         if (pagina->serFolha && strcmp(codigo, pagina->chaves[i]) == 0) {
             *retorno_rnn = pagina->rnn;
             *retorno_i = i;
-            freePagina(pagina);
-            return true;
+            return pagina;
         }
         i++;
     }
@@ -475,20 +413,20 @@ bool buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, in
     //se não encontramos e estamos numa página interna, procuramos no filho correspondende
     if (!pagina->serFolha) {
         rnn_folha = pagina->filhos[i];
-        freePagina(pagina);
+        free(pagina);
         return buscaCodigo(index, rnn_folha, codigo, retorno_rnn, retorno_i);
     }
 
     //se não, atribuímos valores de NOT FOUND
     *retorno_rnn = -1;
     *retorno_i = -1;
-    freePagina(pagina);
-    return false;
+    return NULL;
 }
 
 //TODO: insereFilme
 void insereFilme(NoP *indexP, IndiceS *indexS, string codigo, string titulo, int rnn) {
-    //NoP *noP = newNoP(codigo, rnn); //cria um NoP
+
+    // INserção no índice secundário -----------------------------------------------------------------------------------
     NoS *noS = NULL; //noS do título
     NoCodigo *novoC = newNoCodigo(codigo); //cria um NoCodigo
 
@@ -554,6 +492,240 @@ void removeFilmeFromIndice(NoP *indexP, IndiceS *indexS, string codigo, string t
     //se não há mais filmes com esse título
     if (noS->head == NULL)
         removeNoS(indexS, titulo); //remove o título do índice secundário
+}
+
+void insereCodigo(FILE *index, string codigo, int rnnDados) {
+    int raiz = getRoot(index);
+
+    NoP *velho = buscaFolha(index, raiz, codigo);
+    insereCodigo_Folha(velho, codigo, rnnDados);
+
+    //se o nó folha está cheio após a inserção, há split
+    if (velho->numChaves == ORDER) {
+        NoP *novo = novaPagina(calculaRnnFinal(index) + 1);
+        novo->serFolha = true;
+        novo->pai = velho->pai;
+
+        //encontramos o meio
+        int meio = (int)ceil(velho->numChaves / 2.0) - 1;
+
+        //copiamos as chaves do meio pra cima para o novo nó
+        for (int i = 0; i < ORDER - meio - 1; i++) {
+            strcpy(novo->chaves[i], velho->chaves[meio + i + 1]);
+            novo->rnnDados[i] = velho->rnnDados[meio + i + 1];
+
+            novo->numChaves++;
+            velho->numChaves--;
+
+            strcpy(velho->chaves[meio + i + 1], "*****");
+            velho->rnnDados[meio + i + 1] = -1;
+        }
+
+        //atualiza a lista formada pelas folhas
+        novo->prox = velho->prox;
+        velho->prox = novo->rnn;
+
+        //insere o valor do meio no nó pai
+        insereCodigo_Pai(index, velho, novo->chaves[0], novo);
+
+        //escrevemos o novo nó no arquivo
+        escreverPagina(index, novo);
+        free(novo);
+    }
+    escreverPagina(index, velho);
+    free(velho);
+}
+
+NoP *buscaFolha(FILE *index, int raiz, string codigo) {
+    NoP *atual = lerPagina(index, raiz);
+
+    //Iteramos até encontrar o nó folha apropriado para inserção
+    while (!atual->serFolha) {
+        int i;
+        //Percorre todas as chaves do nó atual
+        for (i = 0; i < atual->numChaves; i++) {
+            if (strcmp(codigo, atual->chaves[i]) == 0) {
+                int filho_direito = atual->filhos[i + 1];
+                free(atual);
+                atual = lerPagina(index, filho_direito);
+                break;
+            } else if (strcmp(codigo, atual->chaves[i]) < 0) { //se a chave é menor do que as demais do nó
+                int filho_esquerdo = atual->filhos[i];
+                free(atual);
+                atual = lerPagina(index, filho_esquerdo);
+                break;
+            }
+
+            //se chegamos ao final do loop sem passar pelas outras condições
+            if (i + 1 == atual->numChaves) {
+                int ultimo_filho = atual->filhos[i + 1];
+                free(atual);
+                atual = lerPagina(index, ultimo_filho);
+                break;
+            }
+        }
+    }
+    return atual;
+}
+
+void insereCodigo_Folha(NoP *folha, string codigo, int rnnDados) {
+    if (folha->numChaves > 0) {
+        int i;
+        //encontramos a posição de inserção correta
+        for (i = 0; i < folha->numChaves; i++) {
+            //se a chave já existe
+            if (strcmp(codigo, folha->chaves[i]) == 0)
+                break;
+
+            //inserção quando codigo é menor do que os valores seguintes
+            if (strcmp(codigo, folha->chaves[i]) < 0) {
+                //insere a chave na posição i e faz um shift nas demais
+                for (int j = folha->numChaves; j > i; j--) {
+                    strcpy(folha->chaves[j], folha->chaves[j - 1]);
+                    folha->rnnDados[j] = folha->rnnDados[j - 1];
+
+                    strcpy(folha->chaves[j - 1], "*****");
+                    folha->rnnDados[j - 1] = -1;
+                }
+                strcpy(folha->chaves[i], codigo);
+                folha->rnnDados[i] = rnnDados;
+                folha->numChaves++;
+                break;
+
+            }
+
+            //inserção quando i é maior do todos os valores presentes
+            if (i + 1 == folha->numChaves) {
+                strcpy(folha->chaves[i + 1], codigo);
+                folha->rnnDados[i + 1] = rnnDados;
+                folha->numChaves++;
+                break;
+            }
+        }
+    } else { //se o nó está vazio, inserimos na primeira posição
+        strcpy(folha->chaves[0], codigo);
+        folha->rnnDados[0] = rnnDados;
+        folha->numChaves++;
+    }
+}
+
+void insereCodigo_Pai(FILE *index, NoP *velho, char *promovida, NoP *novo) {
+    // o nó velho é raiz da árvore, criamos uma nova raiz
+    if (getRoot(index) == velho->rnn) {
+        NoP *novaRaiz = novaPagina(calculaRnnFinal(index) + 1);
+        novaRaiz->serFolha = false;
+        strcpy(novaRaiz->chaves[0], promovida);
+        novaRaiz->filhos[0] = velho->rnn;
+        novaRaiz->filhos[1] = novo->rnn;
+        novaRaiz->numChaves = 1;
+
+        //a nova raiz é pai do nó velho e do nó novo
+        velho->pai = novaRaiz->rnn;
+        novo->pai = novaRaiz->rnn;
+
+        //atualizamos as informações no arquivo
+        setRoot(index, novaRaiz->rnn);
+        escreverPagina(index, velho);
+        escreverPagina(index, novo);
+        escreverPagina(index, novaRaiz);
+
+        free(novaRaiz);
+        return;
+    }
+
+    //se o nó não é raiz, utilizamos o pai do nó atual
+    NoP *pai = lerPagina(index, velho->pai);
+
+    //percorremos cada filho do nó pai até encontrar a posição do nó velho
+    int i;
+    for (i = 0; i <= pai->numChaves; i++) {
+        if (pai->filhos[i] == velho->rnn) {
+            //inserimos a chave promovida na posição correta das chaves do nó pai
+            for (int j = pai->numChaves - 1; j >= i; j--) {
+                strcpy(pai->chaves[j + 1], pai->chaves[j]);
+                pai->filhos[j + 2] = pai->filhos[j + 1];
+            }
+            strcpy(pai->chaves[i], promovida);
+            pai->filhos[i + 1] = novo->rnn;
+            pai->numChaves++;
+
+            //e atualizamos as informações no arquivo
+            escreverPagina(index, velho);
+            escreverPagina(index, novo);
+            escreverPagina(index, pai);
+            break;
+        }
+    }
+
+    //verificamos se o nó pai está excedendo a capacidade máxima após essa inserção
+    int max = ORDER - 1;
+    if (pai->numChaves == max) {
+        NoP *paiDash = novaPagina(calculaRnnFinal(index) + 1);
+        paiDash->serFolha = false;
+        paiDash->pai = pai->pai;
+
+        //move as chaves à direita da posição média para o novo nó interno
+        int meio = (int) ceil(max / 2.0) - 1;
+        for (int j = 0; j < max - meio - 1; j++) {
+            strcpy(paiDash->chaves[j], pai->chaves[meio + j + 1]);
+            paiDash->filhos[j] = pai->filhos[meio + j + 1];
+
+            strcpy(pai->chaves[meio + j + 1], "*****");
+            pai->filhos[meio + j + 1] = -1;
+        }
+        paiDash->filhos[max - meio - 1] = pai->filhos[max];
+        pai->filhos[max] = -1;
+
+        //o valor da posição média será promovido na próxima chamada
+        strcpy(promovida, pai->chaves[meio]);
+
+        //atualizamos as chaves do nó pai para refletir a divisão
+        if (meio != 0) {
+            for (int j = 0; j < meio; j++) {
+                strcpy(pai->chaves[j], pai->chaves[j + 1]);
+                strcpy(pai->chaves[j + 1], "*****");
+            }
+            pai->numChaves = meio;
+        } else {
+            strcpy(pai->chaves[0], pai->chaves[meio]);
+        }
+
+        //atualizamos os filhos do nó pai
+        for (int j = 0; j <= meio; j++) {
+            pai->filhos[j] = pai->filhos[j + 1];
+            pai->filhos[j + 1] = -1;
+        }
+
+        //atualizamos os ponteiros de pais dos nós filhos dos nós pai e paiDash
+        for (int j = 0; j <= meio; j++) {
+            NoP *filho = lerPagina(index, pai->filhos[i]);
+            filho->pai = pai->rnn;
+            escreverPagina(index, filho);
+            free(filho);
+        }
+        for (int j = 0; j < max - meio; j++) {
+            NoP *filho = lerPagina(index, paiDash->filhos[i]);
+            filho->pai = paiDash->rnn;
+            escreverPagina(index, filho);
+            free(filho);
+        }
+
+        //recursivamente insere o avô
+        insereCodigo_Pai(index, pai, promovida, paiDash);
+    }
+    free(pai);
+}
+
+int getRoot(FILE *index) {
+    char buffer[4];
+    fseek(index, 0, SEEK_SET);
+    fscanf(index, "%3s", buffer);
+    return atoi(buffer);
+}
+
+void setRoot(FILE *index, int raiz) {
+    fseek(index, 0, SEEK_SET);
+    fprintf(index, "%02d@", raiz);
 }
 
 int calculaRnnFinal(FILE *index) {

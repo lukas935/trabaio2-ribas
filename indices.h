@@ -2,11 +2,13 @@
 #define INDICES
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <math.h>
 #include "filmes.h"
 
 #ifndef STRING
@@ -15,7 +17,7 @@ typedef char *string;
 #endif
 
 #define ORDER 6
-#define TAM_PAGINA 82
+#define TAM_PAGINA 76
 
 #define CONSISTENTE '0'
 #define INCONSISTENTE '1'
@@ -26,12 +28,12 @@ typedef char *string;
 typedef struct {
     int rnn;
     bool serFolha;
-    //lista dos valores das chaves no nó
-    string *chaves;
+    //lista dos valores das chaves no nó (com um espaço a mais para permitir overflow)
+    char chaves[ORDER - 1 + 1][TAM_COD + 1];
     //lista dos RNNs dos dados, (se o nó é folha)
-    int *rnnDados;
+    int rnnDados[ORDER - 1];
     //lista de RNNs dos nós filhos (se o nó não é folha)
-    int *filhos;
+    int filhos[ORDER];
     int numChaves;
     //RNN do nó pai
     int pai;
@@ -66,20 +68,28 @@ typedef struct {
 
 //Declarações de Funções -----------------------------------------------------------------------------------------------
 
-//Cria um novo NoP, que contém um código e o endereço correspondente, e aponta para NULL
-NoP *newNoP(string codigo, int rnn);
-
 /* TODO: insereCodigo
- * TODO: buscaCodigo
  * TODO: insereFilme
  * TODO: removeFilmeFromIndice
  */
 
-//Aloca espaço na memória para um NoP (folha da árvore B+) com campo rnn
+//Aloca espaço na memória para um NoP (folha da árvore B+), com campo rnn, e demais campos "zerados"
 NoP *novaPagina(int rnn);
 
 //Lê a folha na posição rnn no arquivo index, e retorna um NoP
-NoP *lerPagina(FILE* index, int rnn);
+NoP *lerPagina(FILE *index, int rnn);
+
+//Insere um código, associado aos dados em rnnDados, na árvore B++ presente no arquivo index. Quando há overflow, realiza split
+void insereCodigo(FILE *index, string codigo, int rnnDados);
+
+//Auxiliar de insereCodigo_Folha(). Busca a folha ideal para inserção de codigo
+NoP *buscaFolha(FILE *index, int raiz, string codigo);
+
+//Auxiliar de insereCodigo(). Insere codigo em uma folha da árvore B+
+void insereCodigo_Folha(NoP *folha, string codigo, int rnnDados);
+
+//Auxiliar de insereCodigo(). Utilizado quando ocorre overflow na inserção, insere o codigo promovido no nó pai
+void insereCodigo_Pai(FILE *index, NoP *velho, char *string, NoP *novo);
 
 //Cria um novo NoCodigo, que contém um código, e aponta para NULL;
 NoCodigo *newNoCodigo(string codigo);
@@ -115,10 +125,7 @@ IndiceS *refazerS(FILE *movies);
 void saveIndiceS(IndiceS *index);
 
 //Escreve um NoP folha no arquivo index
-void escreverPagina(FILE* index, NoP* pagina);
-
-//Libera o espaço alocado para uma folha de árvore B+ na memória
-void freePagina(NoP *pagina);
+void escreverPagina(FILE *index, NoP *pagina);
 
 //Libera a lista de códigos dentro de um NoS
 void freeCodigos(NoCodigo *head);
@@ -127,7 +134,7 @@ void freeCodigos(NoCodigo *head);
 void freeIndiceS(IndiceS *index);
 
 //Busca um código na árvore B+ do índice primário
-bool buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, int *retorno_i);
+NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, int *retorno_i);
 
 //Insere o filme com o códgio e titulo correspondentes nos índices
 void insereFilme(NoP *indexP, IndiceS *indexS, string codigo, string titulo, int rnn);
@@ -135,6 +142,13 @@ void insereFilme(NoP *indexP, IndiceS *indexS, string codigo, string titulo, int
 //Remove o filme com o código e titulo correspondente dos índices
 void removeFilmeFromIndice(NoP *indexP, IndiceS *indexS, string codigo, string titulo);
 
+//Lê o header de index para determinar o rnn da raiz da árvore B+
+int getRoot(FILE *index);
+
+//Escreve o rnn da raiz da árvore B+ no header de index
+void setRoot(FILE *index, int raiz);
+
+//Retorna o valor do RNN da última entrada no arquivo de índice primário
 int calculaRnnFinal(FILE *index);
 
 #endif

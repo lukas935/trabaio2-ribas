@@ -125,8 +125,8 @@ void inserirFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
 
     //verifica se o código desse filme já está registrado
     //TODO: refazer isso
-    rnn = rnnFromCodigo(*indexP, codigo);
-    if (rnn != -1) {
+    bool found = buscaCodigo(indexP, raiz, codigo, retorno_rnn, retorno_i);
+    if (!found) {
         puts(ERROR "\tERRO: filme ja cadastrado" CLEAR "\n");
 
         free(codigo);
