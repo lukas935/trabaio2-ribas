@@ -1,6 +1,6 @@
 #include "operacoesUsuario.h"
 
-void inserirFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
+void inserirFilme(FILE *movies, FILE *indexP, IndiceS **indexS) {
     string filme;
 
     string codigo = malloc(TAM_COD + 1);       //5 caracteres, mais finalizador
@@ -16,6 +16,7 @@ void inserirFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
 
     int rnn;
 
+    // input do usuário ------------------------------------------------------------------------------------------------
     puts(SUBTITLE "\n-----------INSERCAO DE FILME----------" CLEAR);
     puts("\t\t\t\t\t" REMINDER "OBS: Nao utilize acentos" CLEAR);
 
@@ -54,7 +55,7 @@ void inserirFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
     printf(CLEAR);
     clearBuffer();
 
-    //validação de entradas
+    //validação de entradas --------------------------------------------------------------------------------------------
     if (!isdigit(nota)) {
         puts(ERROR "\tERRO: nota invalida" CLEAR "\n");
 
@@ -105,6 +106,8 @@ void inserirFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
         }
     }
 
+    //formatação dos campos --------------------------------------------------------------------------------------------
+
     //ajusta o título original
     if (strcmp(tituloPT, tituloOG) == 0)
         strcpy(tituloOG, "Idem");
@@ -124,9 +127,9 @@ void inserirFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
     free(sobrenome);
 
     //verifica se o código desse filme já está registrado
-    //TODO: refazer isso
-    bool found = buscaCodigo(indexP, raiz, codigo, retorno_rnn, retorno_i);
-    if (!found) {
+    int i_found;
+    NoP *found = buscaCodigo(indexP, getRoot(indexP), codigo, &i_found);
+    if (found != NULL) {
         puts(ERROR "\tERRO: filme ja cadastrado" CLEAR "\n");
 
         free(codigo);
@@ -136,8 +139,11 @@ void inserirFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
         free(diretor);
         free(pais);
 
+        free(found);
+
         return;
     }
+    //se não está registrado, continuamos com a formatação
 
     //monta a string filme
     filme = malloc(TAM_FILME + 1);
@@ -150,13 +156,13 @@ void inserirFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
         filme[TAM_FILME] = '\0';
     }
 
-    //imprime no arquivo
+    //impressão no arquivo ---------------------------------------------------------------------------------------------
     fseek(movies, 0, SEEK_END);
     rnn = ftell(movies) / TAM_FILME;
     fputs(filme, movies);
 
     //Atualiza os índices
-    insereFilme(*indexP, *indexS, codigo, tituloPT, rnn);
+    insereFilme(indexP, *indexS, codigo, tituloPT, rnn);
 
     //libera a memória alocada
     free(codigo);
@@ -170,6 +176,7 @@ void inserirFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
     puts(SUCCESS "\tFilme inserido com sucesso" CLEAR "\n");
 }
 
+//TODO: refazer isso
 void removerFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
     string codigo = malloc(TAM_COD + 1);
     string titulo;
@@ -206,6 +213,7 @@ void removerFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
     puts(SUCCESS "\tFilme removido com sucesso" CLEAR "\n");
 }
 
+//TODO: refazer isso
 void modificarNota(FILE *movies, IndiceP *indexP) {
     string codigo = malloc(TAM_COD + 1);
     int rnn;
@@ -246,9 +254,9 @@ void modificarNota(FILE *movies, IndiceP *indexP) {
     puts(SUCCESS "\tNota modificada com sucesso" CLEAR "\n");
 }
 
-void buscarFilme(FILE *movies, IndiceP *indexP, IndiceS *indexS) {
+void buscarFilme(FILE *movies, FILE *indexP, IndiceS *indexS) {
     short int op;
-    short int sucess = 0;
+    bool sucess = false;
 
     do {
         puts(SUBTITLE "\n------------BUSCA DE FILME------------" CLEAR);
@@ -269,17 +277,17 @@ void buscarFilme(FILE *movies, IndiceP *indexP, IndiceS *indexS) {
                 sucess = buscarTitulo(movies, indexP, indexS);
                 break;
             case 0:
-                sucess = 1;
+                sucess = true;
                 puts(""); //pula uma linha
                 break;
             default:
                 puts(ERROR "\tERRO: Opcao invalida" CLEAR);
                 break;
         }
-    } while (sucess != 1);
+    } while (!sucess);
 }
 
-int buscarCodigo(FILE *movies, IndiceP *indexP) {
+bool buscarCodigo(FILE *movies, FILE *indexP) {
     string codigo = malloc(TAM_COD + 1);
     int rnn;
 
@@ -289,22 +297,24 @@ int buscarCodigo(FILE *movies, IndiceP *indexP) {
     scanf("%"STRINGIFY(TAM_COD)"s", codigo);
     clearBuffer();
 
-    //TODO: refazer isso
-    rnn = rnnFromCodigo(indexP, codigo);
+    int i_found;
+    NoP *found = buscaCodigo(indexP, getRoot(indexP), codigo, &i_found);
     free(codigo);
-    if (rnn == -1) {
+    if (found == NULL) {
         puts(ERROR "\tFilme nao encontrado" CLEAR);
-        return 0;
+        free(found);
+        return false;
     }
+    free(found);
     printf("\n");
 
     short int flag = imprimirFilme(movies, rnn);
     if (flag)
         printf("\n");
-    return 1;
+    return true;
 }
 
-int buscarTitulo(FILE *movies, IndiceP *indexP, IndiceS *indexS) {
+bool buscarTitulo(FILE *movies, FILE *indexP, IndiceS *indexS) {
     string titulo = malloc(TAM_TIT_PT + 1);
     NoS *noS;
     NoCodigo *noC;
@@ -320,49 +330,63 @@ int buscarTitulo(FILE *movies, IndiceP *indexP, IndiceS *indexS) {
     //procura o nó do índice secundário associado a esse título
     noS = buscaNoS(indexS, titulo);
     free(titulo);
-
     if (noS == NULL) {
         puts(ERROR "\tFilme nao encontrado" CLEAR);
-        return 0;
+        return false;
     }
 
     //analisa todos os códigos associados a esse título
-    //TODO: refazer isso
     noC = noS->head;
     while (noC != NULL) {
-        rnn = rnnFromCodigo(indexP, noC->codigo);
-        if (rnn == -1) {
+        int i_found;
+        NoP *found = buscaCodigo(indexP, getRoot(indexP), noC->codigo, &i_found);
+        if (found == NULL) {
             printf(ERROR "\tERRO: codigo %s presente no indice não encontrado" CLEAR "\n", noC->codigo);
-            return 0;
+            free(found);
+            return false;
         }
 
         printf("\n");
-        short int flag = imprimirFilme(movies, rnn);
+        bool flag = imprimirFilme(movies, found->rnn);
         if (flag)
             printf("\n");
         noC = noC->prox;
+        free(found);
     }
-    return 1;
+    return true;
 }
 
-void listarFilmes(FILE *movies) {
-    int rnn = 0;
+void listarFilmes(FILE *movies, FILE *indexP) {
+    int rnn_folha;
     short int flag;
-
-    fseek(movies, 0, SEEK_END);
-    int total = ftell(movies) / TAM_FILME;
 
     puts(SUBTITLE "\n----------LISTAGEM DE FILMES----------" CLEAR "\n");
 
-    while (rnn < total) {
-        flag = imprimirFilme(movies, rnn);
-        if (flag)
-            printf("\n");
-        rnn++;
+    // encontramos o começo da lista formada pelas folhas
+    NoP *lista = getListaFolhas(indexP);
+    if (lista == NULL){
+        printf("\n");
+        return;
+    }
+
+    //enquanto há folhas para ler
+    while (lista != NULL) {
+        //imprimimos todos os filmes listados na folha
+        int i = 0;
+        while (i < lista->numChaves) {
+            flag = imprimirFilme(movies, lista->rnnDados[i]);
+            if (flag)
+                printf("\n");
+            i++;
+        }
+        //passamos para a próxima folha
+        rnn_folha = lista->prox;
+        free(lista);
+        lista = lerPagina(indexP, rnn_folha);
     }
 }
 
-short imprimirFilme(FILE *movies, int rnn) {
+bool imprimirFilme(FILE *movies, int rnn) {
     string codigo = malloc(TAM_COD + 1);
     string tituloPT = malloc(TAM_TIT_PT + 1);
     string tituloOG = malloc(TAM_TIT_OG + 1);
@@ -385,7 +409,7 @@ short imprimirFilme(FILE *movies, int rnn) {
             free(diretor);
             free(ano);
             free(pais);
-            return 0;
+            return false;
         }
 
         //imprime as informações na tela
@@ -403,12 +427,11 @@ short imprimirFilme(FILE *movies, int rnn) {
     free(diretor);
     free(ano);
     free(pais);
-    return 1;
+    return true;
 }
 
 string tituloFromRNN(FILE *movies, int rnn) {
     string titulo = malloc(TAM_TIT_PT + 1);
-
     fseek(movies, rnn * TAM_FILME, SEEK_SET);
     fscanf(movies, "%*[^@]@%[^@]@", titulo);
     return titulo;

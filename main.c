@@ -93,19 +93,19 @@ int main() {
 
         switch (op) {
             case 1:
-                inserirFilme(movies, &raiz, &secundarioMem);
+                inserirFilme(movies, iprimary, &secundarioMem);
                 break;
             case 2:
-                removerFilme(movies, &raiz, &secundarioMem);
+                removerFilme(movies, iprimary, &secundarioMem);
                 break;
             case 3:
-                modificarNota(movies, raiz);
+                modificarNota(movies, iprimary);
                 break;
             case 4:
-                buscarFilme(movies, raiz, secundarioMem);
+                buscarFilme(movies, iprimary, secundarioMem);
                 break;
             case 5:
-                listarFilmes(movies);
+                listarFilmes(movies, iprimary);
                 break;
             case 0:
                 puts(SUCCESS "Encerrando programa..." CLEAR);

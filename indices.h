@@ -134,13 +134,16 @@ void freeCodigos(NoCodigo *head);
 void freeIndiceS(IndiceS *index);
 
 //Busca um código na árvore B+ do índice primário
-NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, int *retorno_i);
+NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_i);
 
 //Insere o filme com o códgio e titulo correspondentes nos índices
-void insereFilme(NoP *indexP, IndiceS *indexS, string codigo, string titulo, int rnn);
+void insereFilme(FILE *indexP, IndiceS *indexS, string codigo, string titulo, int rnn_filme);
 
 //Remove o filme com o código e titulo correspondente dos índices
 void removeFilmeFromIndice(NoP *indexP, IndiceS *indexS, string codigo, string titulo);
+
+//Retorna o nó folha mais a esquerda, ou seja, o início da lista formada pelas folhas
+NoP *getListaFolhas(FILE *index);
 
 //Lê o header de index para determinar o rnn da raiz da árvore B+
 int getRoot(FILE *index);

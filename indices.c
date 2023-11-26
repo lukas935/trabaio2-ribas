@@ -392,7 +392,7 @@ void freeIndiceS(IndiceS *indice) {
     free(indice); // Libera o IndiceS
 }
 
-NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, int *retorno_i) {
+NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_i) {
     NoP *pagina = lerPagina(index, rnn_folha);
 
     if (pagina == NULL || strlen(codigo) != TAM_COD)
@@ -403,7 +403,6 @@ NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, in
     while (i < pagina->numChaves && strcmp(codigo, pagina->chaves[i]) >= 0) {
         //se encontramos codigo, atribuímos suas coordenadas às variáveis de retorno
         if (pagina->serFolha && strcmp(codigo, pagina->chaves[i]) == 0) {
-            *retorno_rnn = pagina->rnn;
             *retorno_i = i;
             return pagina;
         }
@@ -414,17 +413,17 @@ NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, in
     if (!pagina->serFolha) {
         rnn_folha = pagina->filhos[i];
         free(pagina);
-        return buscaCodigo(index, rnn_folha, codigo, retorno_rnn, retorno_i);
+        return buscaCodigo(index, rnn_folha, codigo, retorno_i);
     }
 
     //se não, atribuímos valores de NOT FOUND
-    *retorno_rnn = -1;
     *retorno_i = -1;
     return NULL;
 }
 
-//TODO: insereFilme
-void insereFilme(NoP *indexP, IndiceS *indexS, string codigo, string titulo, int rnn) {
+void insereFilme(FILE *indexP, IndiceS *indexS, string codigo, string titulo, int rnn_filme) {
+    // Inserção no índice primário -------------------------------------------------------------------------------------
+    insereCodigo(indexP, codigo, rnn_filme);
 
     // Inserção no índice secundário -----------------------------------------------------------------------------------
     NoS *noS = NULL; //noS do título
@@ -724,6 +723,24 @@ void insereCodigo_Pai(FILE *index, NoP *velho, char *promovida, NoP *novo) {
     //atualizamos o nó pai
     escreverPagina(index, pai);
     free(pai);
+}
+
+NoP *getListaFolhas(FILE *index) {
+    int raiz = getRoot(index);
+
+    //se a árvore está vazia
+    if (raiz == -1)
+        return NULL;
+
+    //Percorremos a árvore até o nível das folhas, indo sempre pelo filho mais à esquerda
+    NoP *atual = lerPagina(index, raiz);
+    while (!atual->serFolha) {
+        raiz = atual->filhos[0];
+        free(atual);
+        atual = lerPagina(index, raiz);
+    }
+
+    return atual;
 }
 
 int getRoot(FILE *index) {

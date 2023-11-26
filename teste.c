@@ -7,7 +7,8 @@ int main() {
 
     int rnn, i;
 
-    //TODO: integrar inserção com o front
+    //TODO: terminar de corrigir coisinhas
+    //TODO: fazer emoção :(
 
 
     fclose(index);

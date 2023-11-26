@@ -12,7 +12,7 @@ typedef char *string;
 #endif
 
 //Menu para inserção de um novo filme
-void inserirFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS);
+void inserirFilme(FILE *movies, FILE *indexP, IndiceS **indexS);
 
 //Menu para remoção de um filme
 void removerFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS);
@@ -21,22 +21,22 @@ void removerFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS);
 void modificarNota(FILE *movies, IndiceP *indexP);
 
 //Menu para busca de filme (com dois submenus)
-void buscarFilme(FILE *movies, IndiceP *indexP, IndiceS *indexS);
+void buscarFilme(FILE *movies, FILE *indexP, IndiceS *indexS);
 
 //Submenu para busca de filme pela titulo primária
-int buscarCodigo(FILE *movies, IndiceP *indexP);
+bool buscarCodigo(FILE *movies, FILE *indexP);
 
 //Submenu para busca de filme pela titulo secundária
-int buscarTitulo(FILE *movies, IndiceP *indexP, IndiceS *indexS);
+bool buscarTitulo(FILE *movies, FILE *indexP, IndiceS *indexS);
 
 //Listagem de todos os filmes
-void listarFilmes(FILE *movies);
+void listarFilmes(FILE *movies, FILE *indexP);
 
 //Retorna o código de um filme com determinado código
 string tituloFromRNN(FILE *movies, int rnn);
 
 //Impressão de um filme na tela; retorna 0 se o filme nesse RNN foi apagado
-short imprimirFilme(FILE *movies, int rnn);
+bool imprimirFilme(FILE *movies, int rnn);
 
 //Limpa o buffer de entrada
 void clearBuffer();
