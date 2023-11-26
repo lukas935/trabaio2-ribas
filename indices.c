@@ -3,7 +3,7 @@
 NoP *novaPagina(int rnn) {
     NoP *novo = malloc(sizeof(NoP));
     novo->rnn = rnn;
-    novo->serFolha = false;
+    novo->serFolha = true;
     for (int i = 0; i < ORDER; i++) //com um espaço a mais, para permitir overflow
         strcpy(novo->chaves[i], "*****");
     for (int i = 0; i < ORDER - 1; i++)
@@ -22,7 +22,7 @@ NoP *lerPagina(FILE *index, int rnn) {
         return NULL;
 
     NoP *novo = novaPagina(rnn); //aloca espaço para o NoP sendo lido
-    char entrada[TAM_PAGINA+1]; //buffer para ler a entrada do arquivo
+    char entrada[TAM_PAGINA + 1]; //buffer para ler a entrada do arquivo
 
     fseek(index, 3 + (rnn * TAM_PAGINA), SEEK_SET); //encontramos a posição da entrada que queremos, pulando o header
     fgets(entrada, TAM_PAGINA + 1, index); //lemos a entrada de tamanho fixo
@@ -426,7 +426,7 @@ NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_rnn, in
 //TODO: insereFilme
 void insereFilme(NoP *indexP, IndiceS *indexS, string codigo, string titulo, int rnn) {
 
-    // INserção no índice secundário -----------------------------------------------------------------------------------
+    // Inserção no índice secundário -----------------------------------------------------------------------------------
     NoS *noS = NULL; //noS do título
     NoCodigo *novoC = newNoCodigo(codigo); //cria um NoCodigo
 
@@ -497,17 +497,27 @@ void removeFilmeFromIndice(NoP *indexP, IndiceS *indexS, string codigo, string t
 void insereCodigo(FILE *index, string codigo, int rnnDados) {
     int raiz = getRoot(index);
 
+    //se a árvore está vazia, criamos uma nova raiz
+    if (raiz == -1) {
+        NoP *novaRaiz = novaPagina(0);
+        insereCodigo_Folha(novaRaiz, codigo, rnnDados);
+        setRoot(index, novaRaiz->rnn);
+        escreverPagina(index, novaRaiz);
+        free(novaRaiz);
+        return;
+    }
+
+    //do contrário, buscamos a folha apropriada para inserção
     NoP *velho = buscaFolha(index, raiz, codigo);
     insereCodigo_Folha(velho, codigo, rnnDados);
 
-    //se o nó folha está cheio após a inserção, há split
+    //se a folha está cheio após a inserção, há split
     if (velho->numChaves == ORDER) {
         NoP *novo = novaPagina(calculaRnnFinal(index) + 1);
-        novo->serFolha = true;
         novo->pai = velho->pai;
 
         //encontramos o meio
-        int meio = (int)ceil(velho->numChaves / 2.0) - 1;
+        int meio = (int) ceil(velho->numChaves / 2.0) - 1;
 
         //copiamos as chaves do meio pra cima para o novo nó
         for (int i = 0; i < ORDER - meio - 1; i++) {
@@ -591,7 +601,6 @@ void insereCodigo_Folha(NoP *folha, string codigo, int rnnDados) {
                 folha->rnnDados[i] = rnnDados;
                 folha->numChaves++;
                 break;
-
             }
 
             //inserção quando i é maior do todos os valores presentes
@@ -610,9 +619,9 @@ void insereCodigo_Folha(NoP *folha, string codigo, int rnnDados) {
 }
 
 void insereCodigo_Pai(FILE *index, NoP *velho, char *promovida, NoP *novo) {
-    // o nó velho é raiz da árvore, criamos uma nova raiz
+    // se o nó velho é raiz da árvore, criamos uma nova raiz
     if (getRoot(index) == velho->rnn) {
-        NoP *novaRaiz = novaPagina(calculaRnnFinal(index) + 1);
+        NoP *novaRaiz = novaPagina(calculaRnnFinal(index));
         novaRaiz->serFolha = false;
         strcpy(novaRaiz->chaves[0], promovida);
         novaRaiz->filhos[0] = velho->rnn;
@@ -625,8 +634,6 @@ void insereCodigo_Pai(FILE *index, NoP *velho, char *promovida, NoP *novo) {
 
         //atualizamos as informações no arquivo
         setRoot(index, novaRaiz->rnn);
-        escreverPagina(index, velho);
-        escreverPagina(index, novo);
         escreverPagina(index, novaRaiz);
 
         free(novaRaiz);
@@ -649,10 +656,6 @@ void insereCodigo_Pai(FILE *index, NoP *velho, char *promovida, NoP *novo) {
             pai->filhos[i + 1] = novo->rnn;
             pai->numChaves++;
 
-            //e atualizamos as informações no arquivo
-            escreverPagina(index, velho);
-            escreverPagina(index, novo);
-            escreverPagina(index, pai);
             break;
         }
     }
@@ -712,14 +715,22 @@ void insereCodigo_Pai(FILE *index, NoP *velho, char *promovida, NoP *novo) {
 
         //recursivamente insere o avô
         insereCodigo_Pai(index, pai, promovida, paiDash);
+
+        //escrevemos o nó paiDash que foi criado no arquivo
+        escreverPagina(index, paiDash);
+        free(paiDash);
     }
+
+    //atualizamos o nó pai
+    escreverPagina(index, pai);
     free(pai);
 }
 
 int getRoot(FILE *index) {
     char buffer[4];
     fseek(index, 0, SEEK_SET);
-    fscanf(index, "%3s", buffer);
+    if (fscanf(index, "%[^@]@", buffer) != 1)
+        return -1;  // Retorna -1 se a leitura falha (se o arquivo está vazio)
     return atoi(buffer);
 }
 
@@ -730,5 +741,8 @@ void setRoot(FILE *index, int raiz) {
 
 int calculaRnnFinal(FILE *index) {
     fseek(index, 0, SEEK_END);
-    return (((int) ftell(index) - 3)) / TAM_PAGINA;
+    int tamanho = ftell(index);
+    if (tamanho < TAM_PAGINA) //se o arquivo é menor do que o tamamho de uma página, assumimos que está vazio
+        return -1;
+    return (tamanho - 3) / TAM_PAGINA;
 }

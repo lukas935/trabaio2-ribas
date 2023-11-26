@@ -7,7 +7,8 @@ int main() {
 
     int rnn, i;
 
-    insereCodigo(index, "NOL23", 14); //TODO: verificar escrita dupla após split
+    //TODO: integrar inserção com o front
+
 
     fclose(index);
 

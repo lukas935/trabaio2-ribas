@@ -24,7 +24,7 @@ typedef char *string;
 
 //Definições de estruturas ---------------------------------------------------------------------------------------------
 
-//Nó que representa uma folha na árvore B+ do índice primário (implementado com ponteiros para permitir a determinação dinâmica da ordem da árvore)
+//Nó que representa uma folha na árvore B+ do índice primário
 typedef struct {
     int rnn;
     bool serFolha;
@@ -88,8 +88,8 @@ NoP *buscaFolha(FILE *index, int raiz, string codigo);
 //Auxiliar de insereCodigo(). Insere codigo em uma folha da árvore B+
 void insereCodigo_Folha(NoP *folha, string codigo, int rnnDados);
 
-//Auxiliar de insereCodigo(). Utilizado quando ocorre overflow na inserção, insere o codigo promovido no nó pai
-void insereCodigo_Pai(FILE *index, NoP *velho, char *string, NoP *novo);
+//Auxiliar de insereCodigo(). Velho e novo são os nós resultantes de um split; inserimos o codigo promovido no pai, e atualizamos sua lista de filhos
+void insereCodigo_Pai(FILE *index, NoP *velho, char *promovido, NoP *novo);
 
 //Cria um novo NoCodigo, que contém um código, e aponta para NULL;
 NoCodigo *newNoCodigo(string codigo);
