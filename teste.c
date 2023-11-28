@@ -5,10 +5,9 @@ int main() {
     FILE *index = fopen("teste.idx", "r+");
     int raiz = getRoot(index);
 
-    int rnn, i;
+    int i;
 
-    //TODO: terminar de corrigir coisinhas
-    //TODO: fazer emoção :(
+    buscaCodigo(index, getRoot(index), "NOL14", &i);
 
 
     fclose(index);

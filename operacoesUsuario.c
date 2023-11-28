@@ -143,6 +143,7 @@ void inserirFilme(FILE *movies, FILE *indexP, IndiceS **indexS) {
 
         return;
     }
+    free(found);
     //se não está registrado, continuamos com a formatação
 
     //monta a string filme
@@ -162,7 +163,7 @@ void inserirFilme(FILE *movies, FILE *indexP, IndiceS **indexS) {
     fputs(filme, movies);
 
     //Atualiza os índices
-    insereFilme(indexP, *indexS, codigo, tituloPT, rnn);
+    insereFilmeIndices(indexP, *indexS, codigo, tituloPT, rnn);
 
     //libera a memória alocada
     free(codigo);
@@ -176,11 +177,10 @@ void inserirFilme(FILE *movies, FILE *indexP, IndiceS **indexS) {
     puts(SUCCESS "\tFilme inserido com sucesso" CLEAR "\n");
 }
 
-//TODO: refazer isso
-void removerFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
+void removerFilme(FILE *movies, FILE *indexP, IndiceS **indexS) {
     string codigo = malloc(TAM_COD + 1);
     string titulo;
-    int rnn;
+    int rnn_filme;
 
     puts(SUBTITLE "\n-----------REMOCAO DE FILME-----------" CLEAR);
 
@@ -189,23 +189,25 @@ void removerFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
     clearBuffer();
 
     //procura a posição do filme correspondente no arquivo
-    //TODO: refazer isso
-    rnn = rnnFromCodigo(*indexP, codigo);
-    if (rnn == -1) {
+    int i_found;
+    NoP *found = buscaCodigo(indexP, getRoot(indexP), codigo, &i_found);
+    if (found == NULL) {
         puts(ERROR "\tFilme nao encontrado" CLEAR "\n");
-        free(codigo);
+        free(found);
         return;
     }
+    rnn_filme = found->rnnDados[i_found];
+    free(found);
 
     //salva o título para remoção do índice secundário
-    titulo = tituloFromRNN(movies, rnn);
+    titulo = tituloFromRNN(movies, rnn_filme);
 
     //marca o filme como deletado
-    fseek(movies, rnn * TAM_FILME, SEEK_SET);
+    fseek(movies, rnn_filme * TAM_FILME, SEEK_SET);
     fputs("*|", movies);
 
     //remove o filme dos índices
-    removeFilmeFromIndice(*indexP, *indexS, codigo, titulo);
+    removeFilmeIndices(indexP, *indexS, codigo, titulo);
 
     free(codigo);
     free(titulo);
@@ -213,10 +215,9 @@ void removerFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS) {
     puts(SUCCESS "\tFilme removido com sucesso" CLEAR "\n");
 }
 
-//TODO: refazer isso
-void modificarNota(FILE *movies, IndiceP *indexP) {
+void modificarNota(FILE *movies, FILE *indexP) {
     string codigo = malloc(TAM_COD + 1);
-    int rnn;
+    int rnn_filme;
     char atual, nova;
 
     puts(SUBTITLE "\n----------MODIFICACAO DE NOTA---------" CLEAR);
@@ -225,15 +226,24 @@ void modificarNota(FILE *movies, IndiceP *indexP) {
     scanf("%"STRINGIFY(TAM_COD)"s", codigo);
     clearBuffer();
 
-    //TODO: refazer isso
-    rnn = rnnFromCodigo(indexP, codigo);
-    free(codigo);
-    if (rnn == -1) {
-        puts(ERROR "Filme nao encontrado" CLEAR "\n");
-        return;
+    //torna a busca case-insensitive
+    for (int i = 0; i < TAM_COD; i++) {
+        if (isalpha(codigo[i]))
+            codigo[i] = (char) toupper(codigo[i]);
     }
 
-    fseek(movies, rnn * TAM_FILME, SEEK_SET);
+    int i_found;
+    NoP *found = buscaCodigo(indexP, getRoot(indexP), codigo, &i_found);
+    free(codigo);
+    if (found == NULL) {
+        puts(ERROR "Filme nao encontrado" CLEAR "\n");
+        free(found);
+        return;
+    }
+    rnn_filme = found->rnnDados[i_found];
+    free(found);
+
+    fseek(movies, rnn_filme * TAM_FILME, SEEK_SET);
 
     //lê a entrada do filme, guardando a nota atual e ignorando os demais campos
     fscanf(movies, "%*[^@]@%*[^@]@%*[^@]@%*[^@]@%*[^@]@%*[^@]@%c@", &atual);
@@ -271,10 +281,10 @@ void buscarFilme(FILE *movies, FILE *indexP, IndiceS *indexS) {
 
         switch (op) {
             case 1:
-                sucess = buscarCodigo(movies, indexP);
+                sucess = buscaPorCodigo(movies, indexP);
                 break;
             case 2:
-                sucess = buscarTitulo(movies, indexP, indexS);
+                sucess = buscaPorTitulo(movies, indexP, indexS);
                 break;
             case 0:
                 sucess = true;
@@ -287,15 +297,21 @@ void buscarFilme(FILE *movies, FILE *indexP, IndiceS *indexS) {
     } while (!sucess);
 }
 
-bool buscarCodigo(FILE *movies, FILE *indexP) {
+bool buscaPorCodigo(FILE *movies, FILE *indexP) {
     string codigo = malloc(TAM_COD + 1);
-    int rnn;
+    int rnn_filme;
 
     puts(SUBSUBTITLE "\n------BUSCA POR CODIGO------" CLEAR);
 
     printf(PROMPT "Chave: " INPUT);
     scanf("%"STRINGIFY(TAM_COD)"s", codigo);
     clearBuffer();
+
+    //torna a busca case-insensitive
+    for (int i = 0; i < TAM_COD; i++) {
+        if (isalpha(codigo[i]))
+            codigo[i] = (char) toupper(codigo[i]);
+    }
 
     int i_found;
     NoP *found = buscaCodigo(indexP, getRoot(indexP), codigo, &i_found);
@@ -305,20 +321,21 @@ bool buscarCodigo(FILE *movies, FILE *indexP) {
         free(found);
         return false;
     }
+    rnn_filme = found->rnnDados[i_found];
     free(found);
     printf("\n");
 
-    short int flag = imprimirFilme(movies, rnn);
+    short int flag = imprimirFilme(movies, rnn_filme);
     if (flag)
         printf("\n");
     return true;
 }
 
-bool buscarTitulo(FILE *movies, FILE *indexP, IndiceS *indexS) {
+bool buscaPorTitulo(FILE *movies, FILE *indexP, IndiceS *indexS) {
     string titulo = malloc(TAM_TIT_PT + 1);
     NoS *noS;
     NoCodigo *noC;
-    int rnn;
+    int rnn_filme;
 
     puts(SUBSUBTITLE "\n------BUSCA POR TITULO------" CLEAR);
 
@@ -345,13 +362,14 @@ bool buscarTitulo(FILE *movies, FILE *indexP, IndiceS *indexS) {
             free(found);
             return false;
         }
+        rnn_filme = found->rnnDados[i_found];
+        free(found);
 
         printf("\n");
-        bool flag = imprimirFilme(movies, found->rnn);
+        bool flag = imprimirFilme(movies, rnn_filme);
         if (flag)
             printf("\n");
         noC = noC->prox;
-        free(found);
     }
     return true;
 }
@@ -364,7 +382,7 @@ void listarFilmes(FILE *movies, FILE *indexP) {
 
     // encontramos o começo da lista formada pelas folhas
     NoP *lista = getListaFolhas(indexP);
-    if (lista == NULL){
+    if (lista == NULL) {
         printf("\n");
         return;
     }

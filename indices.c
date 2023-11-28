@@ -310,8 +310,20 @@ void escreverPagina(FILE *index, NoP *pagina) {
         strcat(chaves, ",");
     }
 
-    //se a página é interna,
-    if (!pagina->serFolha) {
+    //se a página é folha
+    if (pagina->serFolha) {
+        //formatamos os RNNs dos dados
+        for (i = 0; i < ORDER - 1; i++) {
+            rnn = pagina->rnnDados[i];
+            if (rnn == -1)
+                strcat(rnnDados, "**,");
+            else
+                sprintf(rnnDados + strlen(rnnDados), "%02d,", rnn);
+        }
+        //nó folha não tem filhos
+        for (i = 0; i < ORDER; i++)
+            strcat(filhos, "**,");
+    } else { //se é página interna,
         //RNNs dos dados são nulos
         for (i = 0; i < ORDER - 1; i++)
             strcat(rnnDados, "**,");
@@ -324,24 +336,10 @@ void escreverPagina(FILE *index, NoP *pagina) {
             else
                 sprintf(filhos + strlen(filhos), "%02d,", rnn);
         }
-
-    } else { //se a página é folha,
-        //formatamos os RNNs dos dados
-        for (i = 0; i < ORDER - 1; i++) {
-            rnn = pagina->rnnDados[i];
-            if (rnn == -1)
-                strcat(rnnDados, "**,");
-            else
-                sprintf(rnnDados + strlen(rnnDados), "%02d,", rnn);
-        }
-
-        //nó folha não tem filhos
-        for (i = 0; i < ORDER; i++)
-            strcat(filhos, "**,");
     }
 
     //formatamos a quantidade de chaves
-    if (pagina->numChaves == ORDER)
+    if (pagina->numChaves == ORDER) //se alguma página ainda tem resquícios do tratamento de overflow
         sprintf(numChaves, "%d", ORDER - 1);
     else
         sprintf(numChaves, "%d", pagina->numChaves);
@@ -371,7 +369,7 @@ void escreverPagina(FILE *index, NoP *pagina) {
     fprintf(index, "%s", entrada);
 }
 
-void freeCodigos(NoCodigo *head) {
+void freeNoCodigos(NoCodigo *head) {
     while (head != NULL) {
         NoCodigo *freela = head;
         head = head->prox;
@@ -386,19 +384,21 @@ void freeIndiceS(IndiceS *indice) {
         NoS *freela = current;
         current = current->prox;
         free(freela->titulo); // Libera o título do filme
-        freeCodigos(freela->head); // Libera a lista de códigos associada a este NoS
+        freeNoCodigos(freela->head); // Libera a lista de códigos associada a este NoS
         free(freela); // Libera o NoS
     }
     free(indice); // Libera o IndiceS
 }
 
-NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_i) {
-    NoP *pagina = lerPagina(index, rnn_folha);
+NoP *buscaCodigo(FILE *index, int rnn, string codigo, int *retorno_i) {
+    NoP *pagina = lerPagina(index, rnn);
 
-    if (pagina == NULL || strlen(codigo) != TAM_COD)
+    if (pagina == NULL || strlen(codigo) != TAM_COD) {
+        *retorno_i = -1;
         return NULL;
+    }
 
-    //buscamos até que codigo seja menor do que a chave no índice, ou chegamos ao fim da lista
+    //andamos até que o codigo que buscamos seja menor do que a chave na página, ou chegamos ao fim da lista de chaves
     int i = 0;
     while (i < pagina->numChaves && strcmp(codigo, pagina->chaves[i]) >= 0) {
         //se encontramos codigo, atribuímos suas coordenadas às variáveis de retorno
@@ -409,11 +409,11 @@ NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_i) {
         i++;
     }
 
-    //se não encontramos e estamos numa página interna, procuramos no filho correspondende
+    //se não encontramos e estamos numa página interna, procuramos no filho correspondente
     if (!pagina->serFolha) {
-        rnn_folha = pagina->filhos[i];
+        rnn = pagina->filhos[i];
         free(pagina);
-        return buscaCodigo(index, rnn_folha, codigo, retorno_i);
+        return buscaCodigo(index, rnn, codigo, retorno_i);
     }
 
     //se não, atribuímos valores de NOT FOUND
@@ -421,11 +421,11 @@ NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_i) {
     return NULL;
 }
 
-void insereFilme(FILE *indexP, IndiceS *indexS, string codigo, string titulo, int rnn_filme) {
-    // Inserção no índice primário -------------------------------------------------------------------------------------
+void insereFilmeIndices(FILE *indexP, IndiceS *indexS, string codigo, string titulo, int rnn_filme) {
+    // Inserção no índice primário
     insereCodigo(indexP, codigo, rnn_filme);
 
-    // Inserção no índice secundário -----------------------------------------------------------------------------------
+    // Inserção no índice secundário ---------------------------------------------------------
     NoS *noS = NULL; //noS do título
     NoCodigo *novoC = newNoCodigo(codigo); //cria um NoCodigo
 
@@ -473,7 +473,7 @@ void removeNoS(IndiceS *index, string titulo) {
             else //se estamos no meio ou no final da lista
                 prev->prox = cur->prox;
 
-            freeCodigos(cur->head);
+            freeNoCodigos(cur->head);
             free(cur);
             index->tamanho--;
             return;
@@ -483,14 +483,38 @@ void removeNoS(IndiceS *index, string titulo) {
     }
 }
 
-//TODO: removeFilmeFromIndice
-void removeFilmeFromIndice(NoP *indexP, IndiceS *indexS, string codigo, string titulo) {
+void removeFilmeIndices(FILE *indexP, IndiceS *indexS, string codigo, string titulo) {
+    //remoção do índice primário
+    removeCodigo(indexP, getRoot(indexP), codigo);
+
+    //remoção do índice secundário --------------------------------------------------
     NoS *noS = buscaNoS(indexS, titulo); //encontra o título no índice secundário
     removeNoCodigo(noS, codigo); //remove a associação do código com o título no índice secundário
 
     //se não há mais filmes com esse título
     if (noS->head == NULL)
         removeNoS(indexS, titulo); //remove o título do índice secundário
+}
+
+//TODO: não finalizado
+void removeCodigo(FILE *index, int raiz, string codigo) {
+    //encontramos a folha com codigo
+    NoP *no = buscaFolha(index, raiz, codigo);
+
+    if (no == NULL)
+        return;
+
+    //removemos a chave da folha
+    removeCodigo_Folha(index, no, codigo);
+
+    //lida com a propagação
+    NoP *pai = lerPagina(index, no->pai);
+
+
+}
+
+void removeCodigo_Folha(FILE *index, NoP *folha, string codigo) {
+
 }
 
 void insereCodigo(FILE *index, string codigo, int rnnDados) {
@@ -759,7 +783,7 @@ void setRoot(FILE *index, int raiz) {
 int calculaRnnFinal(FILE *index) {
     fseek(index, 0, SEEK_END);
     int tamanho = ftell(index);
-    if (tamanho < TAM_PAGINA) //se o arquivo é menor do que o tamamho de uma página, assumimos que está vazio
+    if (tamanho < TAM_PAGINA) //se o arquivo é menor do que o tamanho de uma página, assumimos que está vazio
         return -1;
     return (tamanho - 3) / TAM_PAGINA;
 }

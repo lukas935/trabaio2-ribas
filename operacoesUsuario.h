@@ -15,19 +15,19 @@ typedef char *string;
 void inserirFilme(FILE *movies, FILE *indexP, IndiceS **indexS);
 
 //Menu para remoção de um filme
-void removerFilme(FILE *movies, IndiceP **indexP, IndiceS **indexS);
+void removerFilme(FILE *movies, FILE *indexP, IndiceS **indexS);
 
 //Menu para modificação de nota
-void modificarNota(FILE *movies, IndiceP *indexP);
+void modificarNota(FILE *movies, FILE *indexP);
 
 //Menu para busca de filme (com dois submenus)
 void buscarFilme(FILE *movies, FILE *indexP, IndiceS *indexS);
 
 //Submenu para busca de filme pela titulo primária
-bool buscarCodigo(FILE *movies, FILE *indexP);
+bool buscaPorCodigo(FILE *movies, FILE *indexP);
 
 //Submenu para busca de filme pela titulo secundária
-bool buscarTitulo(FILE *movies, FILE *indexP, IndiceS *indexS);
+bool buscaPorTitulo(FILE *movies, FILE *indexP, IndiceS *indexS);
 
 //Listagem de todos os filmes
 void listarFilmes(FILE *movies, FILE *indexP);

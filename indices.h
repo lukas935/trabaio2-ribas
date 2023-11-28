@@ -41,7 +41,7 @@ typedef struct {
     int prox;
 } NoP;
 
-//Nó que representa um código de filme em uma lista de códigos
+//Nó que representa um código de filme em uma lista de códigos no índice secundário
 typedef struct noCodigo {
     //Código do filme
     string codigo;
@@ -68,37 +68,13 @@ typedef struct {
 
 //Declarações de Funções -----------------------------------------------------------------------------------------------
 
-/* TODO: insereCodigo
- * TODO: insereFilme
- * TODO: removeFilmeFromIndice
- */
+//Insere o filme com o código e titulo correspondentes nos índices
+void insereFilmeIndices(FILE *indexP, IndiceS *indexS, string codigo, string titulo, int rnn_filme);
 
-//Aloca espaço na memória para um NoP (folha da árvore B+), com campo rnn, e demais campos "zerados"
-NoP *novaPagina(int rnn);
+//Remove o filme com o código e titulo correspondente dos índices
+void removeFilmeIndices(FILE *indexP, IndiceS *indexS, string codigo, string titulo);
 
-//Lê a folha na posição rnn no arquivo index, e retorna um NoP
-NoP *lerPagina(FILE *index, int rnn);
-
-//Insere um código, associado aos dados em rnnDados, na árvore B++ presente no arquivo index. Quando há overflow, realiza split
-void insereCodigo(FILE *index, string codigo, int rnnDados);
-
-//Auxiliar de insereCodigo_Folha(). Busca a folha ideal para inserção de codigo
-NoP *buscaFolha(FILE *index, int raiz, string codigo);
-
-//Auxiliar de insereCodigo(). Insere codigo em uma folha da árvore B+
-void insereCodigo_Folha(NoP *folha, string codigo, int rnnDados);
-
-//Auxiliar de insereCodigo(). Velho e novo são os nós resultantes de um split; inserimos o codigo promovido no pai, e atualizamos sua lista de filhos
-void insereCodigo_Pai(FILE *index, NoP *velho, char *promovido, NoP *novo);
-
-//Cria um novo NoCodigo, que contém um código, e aponta para NULL;
-NoCodigo *newNoCodigo(string codigo);
-
-//Insere ordenadamente um NoCodigo na lista que começa em head
-void insereNoCodigo(NoS *noS, NoCodigo *noC);
-
-//Remove o código associado a um título no índice secundário
-void removeNoCodigo(NoS *no, string codigo);
+//Indice Secundário (lista) ---------------------------------------
 
 //Cria um novo NoS, que contém um titulo, tem um ponteiro para uma lista vazia de NoChave, e aponta para NULL
 NoS *newNoS(string titulo);
@@ -124,25 +100,58 @@ IndiceS *refazerS(FILE *movies);
 //Salva as informações de IndiceS em um arquivo
 void saveIndiceS(IndiceS *index);
 
-//Escreve um NoP folha no arquivo index
-void escreverPagina(FILE *index, NoP *pagina);
-
-//Libera a lista de códigos dentro de um NoS
-void freeCodigos(NoCodigo *head);
-
 //Libera o espaço alocado para um IndiceS na memória
 void freeIndiceS(IndiceS *index);
 
+//Cria um novo NoCodigo, que contém um código, e aponta para NULL;
+NoCodigo *newNoCodigo(string codigo);
+
+//Insere ordenadamente um NoCodigo na lista que começa em head
+void insereNoCodigo(NoS *noS, NoCodigo *noC);
+
+//Remove o código associado a um título no índice secundário
+void removeNoCodigo(NoS *no, string codigo);
+
+//Libera a lista de códigos dentro de um NoS
+void freeNoCodigos(NoCodigo *head);
+
+// Indice Primário (árvore B+) ----------------------------
+
+/*
+ * TODO: remoção
+ */
+
+//Aloca espaço na memória para um NoP (folha da árvore B+), com campo rnn, e demais campos "zerados"
+NoP *novaPagina(int rnn);
+
+//Lê a folha na posição rnn no arquivo index, e retorna um NoP
+NoP *lerPagina(FILE *index, int rnn);
+
+//Insere um código, associado aos dados em rnnDados, na árvore B+ presente no arquivo index. Quando há overflow, realiza split
+void insereCodigo(FILE *index, string codigo, int rnnDados);
+
+//Auxiliar de insereCodigo_Folha(). Busca a folha ideal para inserção de codigo
+NoP *buscaFolha(FILE *index, int raiz, string codigo);
+
+//Auxiliar de insereCodigo(). Insere codigo em uma folha da árvore B+
+void insereCodigo_Folha(NoP *folha, string codigo, int rnnDados);
+
+//Auxiliar de insereCodigo(). Velho e novo são os nós resultantes de um split; inserimos o codigo promovido no pai, e atualizamos sua lista de filhos
+void insereCodigo_Pai(FILE *index, NoP *velho, char *promovido, NoP *novo);
+
 //Busca um código na árvore B+ do índice primário
-NoP *buscaCodigo(FILE *index, int rnn_folha, string codigo, int *retorno_i);
+NoP *buscaCodigo(FILE *index, int rnn, string codigo, int *retorno_i);
 
-//Insere o filme com o códgio e titulo correspondentes nos índices
-void insereFilme(FILE *indexP, IndiceS *indexS, string codigo, string titulo, int rnn_filme);
+//Remove um dado codigo e seu rnn de dados associado da árvore B+
+void removeCodigo(FILE *index, int raiz, string codigo);
 
-//Remove o filme com o código e titulo correspondente dos índices
-void removeFilmeFromIndice(NoP *indexP, IndiceS *indexS, string codigo, string titulo);
+//Auxiliar de removeCodigo()
+void removeCodigo_Folha(FILE *index, NoP *folha, string codigo);
 
-//Retorna o nó folha mais a esquerda, ou seja, o início da lista formada pelas folhas
+//Escreve um NoP folha no arquivo index
+void escreverPagina(FILE *index, NoP *pagina);
+
+//Retorna o nó folha mais à esquerda na árvore B+, ou seja, o início da lista formada pelas folhas
 NoP *getListaFolhas(FILE *index);
 
 //Lê o header de index para determinar o rnn da raiz da árvore B+

@@ -26,7 +26,7 @@ int main() {
     if (movies == NULL) //se é NULL
         movies = fopen("data/movies.dat", "w+");
     if (movies == NULL) {
-        puts(ERROR"\tERRO: Impossível criar arquivo");
+        puts(ERROR"\tERRO: Impossivel criar arquivo data/movies.dat");
         return 1;
     }
 
@@ -37,26 +37,15 @@ int main() {
      *          senão, refaz o índice na memória
      *      senão, cria os índices na RAM
      */
-    /*
     iprimary = fopen("data/iprimary.idx", "r+a");
-    if (iprimary != NULL) {
-        char flag = fgetc(iprimary); //reads the very first character, the flag
-        if (flag == CONSISTENTE)
-            raiz = lerP(iprimary); //carrega na memória a partir do arquivo iprimary.idx
-        else
-            raiz = refazerP(movies); //refaz o índice na memória a partir do arquivo de filmes
-    } else {
+    if (iprimary == NULL) {
         iprimary = fopen("data/iprimary.idx", "w+");
+
         if (iprimary == NULL) {
-            puts(ERROR "\tERRO: Impossível criar arquivo");
+            puts(ERROR "\tERRO: Impossivel criar arquivo data/iprimary.idx");
             return 1;
         }
-        raiz = refazerP(movies); //faz o índice na memória a partir do arquivo de filmes
     }
-    fseek(iprimary, 0, SEEK_SET);
-    fputc(INCONSISTENTE, iprimary); //assume que o arquivo ficará inconsistente durante a execução do programa
-    fclose(iprimary);
-    */
 
     ititle = fopen("data/ititle.idx", "r+a");
     if (ititle != NULL) {
@@ -68,7 +57,7 @@ int main() {
     } else {
         ititle = fopen("data/ititle.idx", "w+");
         if (ititle == NULL) {
-            puts(ERROR "\tERRO: Impossível criar arquivo");
+            puts(ERROR "\tERRO: Impossivel criar arquivo data/ititle.idx");
             return 1;
         }
         secundarioMem = refazerS(movies); //refaz o índice na memória a partir do arquivo de filmes
@@ -76,6 +65,11 @@ int main() {
     fseek(ititle, 0, SEEK_SET);
     fputc(INCONSISTENTE, ititle); //assume que o arquivo ficará inconsistente durante a execução do programa
     fclose(ititle);
+
+    //avisos iniciais
+    puts(REMINDER"Nao utilize acentos durante durante a execucao do codigo");
+    puts(REMINDER"A delecao do arquivo iprimary.idx sem delecao do arquivo movies.dat gera inconsistencia");
+    puts(REMINDER"Funcao de remocao de filme nao disponivel"CLEAR);
 
     //menu do usuário --------------------------------------------------------------------------------------------------
     printf("\n");
@@ -96,7 +90,8 @@ int main() {
                 inserirFilme(movies, iprimary, &secundarioMem);
                 break;
             case 2:
-                removerFilme(movies, iprimary, &secundarioMem);
+                //removerFilme(movies, iprimary, &secundarioMem);
+                puts(ERROR"\tERRO: Essa funcao nao esta disponivel");
                 break;
             case 3:
                 modificarNota(movies, iprimary);
@@ -118,8 +113,9 @@ int main() {
 
     //finalização do programa ------------------------------------------------------------------------------------------
 
-    //salvar os arquivos
+    //salvar os arquivos (o índice primário não precisa de tratamento especial para ser fechado)
     fclose(movies);
+    fclose(iprimary);
     saveIndiceS(secundarioMem);
 
     //liberar a memória alocada
