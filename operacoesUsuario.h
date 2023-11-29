@@ -29,8 +29,14 @@ bool buscaPorCodigo(FILE *movies, FILE *indexP);
 //Submenu para busca de filme pela titulo secundária
 bool buscaPorTitulo(FILE *movies, FILE *indexP, IndiceS *indexS);
 
-//Listagem de todos os filmes
+//Submenu para listagem de filmes
 void listarFilmes(FILE *movies, FILE *indexP);
+
+//Lista todos os filmes, em ordem alfabética
+void listarTodos(FILE *movies, FILE* indexP);
+
+//Pede para o usuário um intervalo, e lista em ordem alfabética todos os filmes nesse intervalo
+void listarIntervalo(FILE *movies, FILE *indexP);
 
 //Retorna o código de um filme com determinado código
 string tituloFromRNN(FILE *movies, int rnn);

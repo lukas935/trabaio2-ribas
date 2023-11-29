@@ -641,12 +641,12 @@ void insereCodigo_Folha(NoP *folha, string codigo, int rnnDados) {
     }
 }
 
-void insereCodigo_Pai(FILE *index, NoP *velho, char *promovida, NoP *novo) {
+void insereCodigo_Pai(FILE *index, NoP *velho, string promovido, NoP *novo) {
     // se o nó velho é raiz da árvore, criamos uma nova raiz
     if (getRoot(index) == velho->rnn) {
         NoP *novaRaiz = novaPagina(calculaRnnFinal(index));
         novaRaiz->serFolha = false;
-        strcpy(novaRaiz->chaves[0], promovida);
+        strcpy(novaRaiz->chaves[0], promovido);
         novaRaiz->filhos[0] = velho->rnn;
         novaRaiz->filhos[1] = novo->rnn;
         novaRaiz->numChaves = 1;
@@ -675,7 +675,7 @@ void insereCodigo_Pai(FILE *index, NoP *velho, char *promovida, NoP *novo) {
                 strcpy(pai->chaves[j + 1], pai->chaves[j]);
                 pai->filhos[j + 2] = pai->filhos[j + 1];
             }
-            strcpy(pai->chaves[i], promovida);
+            strcpy(pai->chaves[i], promovido);
             pai->filhos[i + 1] = novo->rnn;
             pai->numChaves++;
 
@@ -703,7 +703,7 @@ void insereCodigo_Pai(FILE *index, NoP *velho, char *promovida, NoP *novo) {
         pai->filhos[max] = -1;
 
         //o valor da posição média será promovido na próxima chamada
-        strcpy(promovida, pai->chaves[meio]);
+        strcpy(promovido, pai->chaves[meio]);
 
         //atualizamos as chaves do nó pai para refletir a divisão
         if (meio != 0) {
@@ -737,7 +737,7 @@ void insereCodigo_Pai(FILE *index, NoP *velho, char *promovida, NoP *novo) {
         }
 
         //recursivamente insere o avô
-        insereCodigo_Pai(index, pai, promovida, paiDash);
+        insereCodigo_Pai(index, pai, promovido, paiDash);
 
         //escrevemos o nó paiDash que foi criado no arquivo
         escreverPagina(index, paiDash);

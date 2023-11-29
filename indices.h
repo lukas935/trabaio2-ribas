@@ -137,7 +137,7 @@ NoP *buscaFolha(FILE *index, int raiz, string codigo);
 void insereCodigo_Folha(NoP *folha, string codigo, int rnnDados);
 
 //Auxiliar de insereCodigo(). Velho e novo são os nós resultantes de um split; inserimos o codigo promovido no pai, e atualizamos sua lista de filhos
-void insereCodigo_Pai(FILE *index, NoP *velho, char *promovido, NoP *novo);
+void insereCodigo_Pai(FILE *index, NoP *velho, string promovido, NoP *novo);
 
 //Busca um código na árvore B+ do índice primário
 NoP *buscaCodigo(FILE *index, int rnn, string codigo, int *retorno_i);

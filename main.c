@@ -67,7 +67,7 @@ int main() {
     fclose(ititle);
 
     //avisos iniciais
-    puts(REMINDER"Nao utilize acentos durante durante a execucao do codigo");
+    puts(REMINDER"Nao utilize acentos durante a execucao do codigo");
     puts(REMINDER"A delecao do arquivo iprimary.idx sem delecao do arquivo movies.dat gera inconsistencia");
     puts(REMINDER"Funcao de remocao de filme nao disponivel"CLEAR);
 
@@ -91,7 +91,7 @@ int main() {
                 break;
             case 2:
                 //removerFilme(movies, iprimary, &secundarioMem);
-                puts(ERROR"\tERRO: Essa funcao nao esta disponivel");
+                puts(ERROR"\tERRO: Essa funcao nao esta disponivel\n");
                 break;
             case 3:
                 modificarNota(movies, iprimary);

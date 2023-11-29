@@ -57,7 +57,7 @@ void inserirFilme(FILE *movies, FILE *indexP, IndiceS **indexS) {
 
     //validação de entradas --------------------------------------------------------------------------------------------
     if (!isdigit(nota)) {
-        puts(ERROR "\tERRO: nota invalida" CLEAR "\n");
+        puts(ERROR "ERRO: nota invalida" CLEAR "\n");
 
         free(codigo);
         free(tituloPT);
@@ -73,7 +73,7 @@ void inserirFilme(FILE *movies, FILE *indexP, IndiceS **indexS) {
     }
 
     if (strlen(sobrenome) < 3) {
-        puts(ERROR "\tERRO: sobrenome curto" CLEAR "\n");
+        puts(ERROR "ERRO: sobrenome curto" CLEAR "\n");
 
         free(codigo);
         free(tituloPT);
@@ -90,7 +90,7 @@ void inserirFilme(FILE *movies, FILE *indexP, IndiceS **indexS) {
 
     for (int i = 0; i < 4; i++) {
         if (!isdigit(ano[i])) {
-            puts(ERROR "\tERRO: ano invalido" CLEAR "\n");
+            puts(ERROR "ERRO: ano invalido" CLEAR "\n");
 
             free(codigo);
             free(tituloPT);
@@ -130,7 +130,7 @@ void inserirFilme(FILE *movies, FILE *indexP, IndiceS **indexS) {
     int i_found;
     NoP *found = buscaCodigo(indexP, getRoot(indexP), codigo, &i_found);
     if (found != NULL) {
-        puts(ERROR "\tERRO: filme ja cadastrado" CLEAR "\n");
+        puts(ERROR "ERRO: filme ja cadastrado" CLEAR "\n");
 
         free(codigo);
         free(tituloPT);
@@ -192,7 +192,7 @@ void removerFilme(FILE *movies, FILE *indexP, IndiceS **indexS) {
     int i_found;
     NoP *found = buscaCodigo(indexP, getRoot(indexP), codigo, &i_found);
     if (found == NULL) {
-        puts(ERROR "\tFilme nao encontrado" CLEAR "\n");
+        puts(ERROR "Filme nao encontrado" CLEAR "\n");
         free(found);
         return;
     }
@@ -253,7 +253,7 @@ void modificarNota(FILE *movies, FILE *indexP) {
     scanf("%c", &nova);
 
     if (!isdigit(nova)) {
-        puts(ERROR "\tERRO: nota invalida" CLEAR "\n");
+        puts(ERROR "ERRO: nota invalida" CLEAR "\n");
         return;
     }
 
@@ -291,7 +291,7 @@ void buscarFilme(FILE *movies, FILE *indexP, IndiceS *indexS) {
                 puts(""); //pula uma linha
                 break;
             default:
-                puts(ERROR "\tERRO: Opcao invalida" CLEAR);
+                puts(ERROR "ERRO: Opcao invalida" CLEAR);
                 break;
         }
     } while (!sucess);
@@ -317,7 +317,7 @@ bool buscaPorCodigo(FILE *movies, FILE *indexP) {
     NoP *found = buscaCodigo(indexP, getRoot(indexP), codigo, &i_found);
     free(codigo);
     if (found == NULL) {
-        puts(ERROR "\tFilme nao encontrado" CLEAR);
+        puts(ERROR "Filme nao encontrado" CLEAR);
         free(found);
         return false;
     }
@@ -348,7 +348,7 @@ bool buscaPorTitulo(FILE *movies, FILE *indexP, IndiceS *indexS) {
     noS = buscaNoS(indexS, titulo);
     free(titulo);
     if (noS == NULL) {
-        puts(ERROR "\tFilme nao encontrado" CLEAR);
+        puts(ERROR "Filme nao encontrado" CLEAR);
         return false;
     }
 
@@ -358,7 +358,7 @@ bool buscaPorTitulo(FILE *movies, FILE *indexP, IndiceS *indexS) {
         int i_found;
         NoP *found = buscaCodigo(indexP, getRoot(indexP), noC->codigo, &i_found);
         if (found == NULL) {
-            printf(ERROR "\tERRO: codigo %s presente no indice não encontrado" CLEAR "\n", noC->codigo);
+            printf(ERROR "ERRO: codigo %s presente no indice não encontrado" CLEAR "\n", noC->codigo);
             free(found);
             return false;
         }
@@ -375,10 +375,97 @@ bool buscaPorTitulo(FILE *movies, FILE *indexP, IndiceS *indexS) {
 }
 
 void listarFilmes(FILE *movies, FILE *indexP) {
-    int rnn_folha;
-    short int flag;
+    short int op;
+    bool sucess = false;
 
-    puts(SUBTITLE "\n----------LISTAGEM DE FILMES----------" CLEAR "\n");
+    do {
+        puts(SUBTITLE "\n----------LISTAGEM DE FILMES----------" CLEAR);
+        puts(MENU "1." CLEAR " Listar todos");
+        puts(MENU "2." CLEAR " Listar um intervalo");
+        puts(MENU "0." CLEAR " Retornar");
+        printf(PROMPT "-> " CLEAR INPUT);
+        scanf("%hd", &op);
+        printf(CLEAR);
+        clearBuffer();
+
+        switch (op) {
+            case 1:
+                listarTodos(movies, indexP);
+                sucess = true;
+                break;
+            case 2:
+                listarIntervalo(movies, indexP);
+                sucess = true;
+                break;
+            case 0:
+                sucess = true;
+                puts(""); //pula uma linha
+                break;
+            default:
+                puts(ERROR "ERRO: Opcao invalida" CLEAR);
+                break;
+        }
+    } while (!sucess);
+}
+
+void listarIntervalo(FILE *movies, FILE *indexP) {
+    char inicio[TAM_COD + 1], fim[TAM_COD + 1];
+    int raiz = getRoot(indexP);
+
+    puts(SUBSUBTITLE "\n------LISTAR INTERVALO------" CLEAR);
+
+    printf(PROMPT "Codigo Inicial: " INPUT);
+    scanf("%"STRINGIFY(TAM_COD)"s", inicio);
+    printf(CLEAR);
+    clearBuffer();
+
+    printf(PROMPT "Codigo Final: " INPUT);
+    scanf("%"STRINGIFY(TAM_COD)"s", fim);
+    printf(CLEAR);
+    clearBuffer();
+
+    //se a lista está vazia
+    if (raiz == -1) {
+        printf("\n");
+        return;
+    }
+
+    //garante que o input de inicio e fim é case-insensitive
+    for (int i = 0; i < TAM_COD; i++) {
+        if (isalpha(inicio[i]))
+            inicio[i] = (char) toupper(inicio[i]);
+        if (isalpha(fim[i]))
+            fim[i] = (char) toupper(fim[i]);
+    }
+
+    bool sucess;
+    int i;
+    NoP *atual = buscaCodigo(indexP, raiz, inicio, &i);
+
+    printf("\n");
+    while (atual != NULL && strcmp(fim, atual->chaves[i]) >= 0) {
+        //imprimimos o filme
+        sucess = imprimirFilme(movies, atual->rnnDados[i]);
+        if (sucess)
+            printf("\n");
+
+        //passamos para o próximo RNN de dados na lista
+        i++;
+        if (i == atual->numChaves) { //se chegamos ao final dessa folha
+            //zeramos o índice para iterar o laço sobre a próxima folha
+            i = 0;
+            int prox = atual->prox;
+            free(atual);
+            atual = lerPagina(indexP, prox); //(será null se tivermos chego ao final da lista)
+        }
+    }
+}
+
+void listarTodos(FILE *movies, FILE *indexP) {
+    puts(SUBSUBTITLE "\n--------LISTAR TODOS--------" CLEAR);
+
+    int rnn_folha;
+    bool sucess;
 
     // encontramos o começo da lista formada pelas folhas
     NoP *lista = getListaFolhas(indexP);
@@ -392,8 +479,8 @@ void listarFilmes(FILE *movies, FILE *indexP) {
         //imprimimos todos os filmes listados na folha
         int i = 0;
         while (i < lista->numChaves) {
-            flag = imprimirFilme(movies, lista->rnnDados[i]);
-            if (flag)
+            sucess = imprimirFilme(movies, lista->rnnDados[i]);
+            if (sucess)
                 printf("\n");
             i++;
         }
